@@ -44,7 +44,12 @@ contract EntryPoint is IEntryPoint, StakeManager {
      */
     function _compensate(address payable beneficiary, uint256 amount) internal {
         require(beneficiary != address(0), "AA90 invalid beneficiary");
-        (bool success,) = beneficiary.call{value : amount}("");
+        
+        // (bool success,) = beneficiary.call{value : amount}("");
+        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
+        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
+        bool success = tokenContract.approve(beneficiary, amount); // Call the approve function
+
         require(success, "AA91 failed send to beneficiary");
     }
 

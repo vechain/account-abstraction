@@ -2,6 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "../interfaces/IStakeManager.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /* solhint-disable avoid-low-level-calls */
 /* solhint-disable not-rely-on-time */
@@ -32,9 +33,48 @@ abstract contract StakeManager is IStakeManager {
         return deposits[account].deposit;
     }
 
+    function _getAllowedTokens() private returns (uint256) {
+        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
+        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
+
+        // Get how much the EntryPoint was allowed from the Account
+        uint256 allowance = tokenContract.allowance(msg.sender, address(this));
+
+        if(allowance > 0){
+            // Take the approved coins
+            bool success = tokenContract.transferFrom(msg.sender, address(this), allowance); // Call the approve function
+            require(success, "Token transfer failed");
+        }
+        return allowance;
+    }
+
+    // Here VTHO Changes
     receive() external payable {
+        // uint256 vthoEquivalent = msg.value; //some VET <-> VTHO convertion needs to happen here
+        // depositVTHOTo(msg.sender, vthoEquivalent);
+
+        _getAllowedTokens();
+        
+
+        // Also keep old code
         depositTo(msg.sender);
     }
+
+    function receiveVTHO() external{
+        uint256 allowance = _getAllowedTokens();
+        uint256 vthoEquivalent = allowance; //some VET <-> VTHO convertion needs to happen here
+        depositVTHOTo(msg.sender, vthoEquivalent);
+    }
+
+
+
+        // Here VTHO Changes
+    function depositVTHOTo(address account, uint256 amount) public payable {
+        _incrementDeposit(account, amount);
+        DepositInfo storage info = deposits[account];
+        emit Deposited(account, info.deposit);
+    }
+
 
     function _incrementDeposit(address account, uint256 amount) internal {
         DepositInfo storage info = deposits[account];
@@ -64,6 +104,35 @@ abstract contract StakeManager is IStakeManager {
         uint256 stake = info.stake + msg.value;
         require(stake > 0, "no stake specified");
         require(stake <= type(uint112).max, "stake overflow");
+        deposits[msg.sender] = DepositInfo(
+            info.deposit,
+            true,
+            uint112(stake),
+            unstakeDelaySec,
+            0
+        );
+        emit StakeLocked(msg.sender, stake, unstakeDelaySec);
+    }
+
+        /**
+     * add to the account's stake - amount and delay
+     * any pending unstake is first cancelled.
+     * @param unstakeDelaySec the new lock duration before the deposit can be withdrawn.
+     */
+    function addVTHOStake(uint32 unstakeDelaySec, uint256 amount) public payable {
+        DepositInfo storage info = deposits[msg.sender];
+        require(unstakeDelaySec > 0, "must specify unstake delay");
+        require(unstakeDelaySec >= info.unstakeDelaySec, "cannot decrease unstake time");
+        uint256 stake = info.stake + amount;
+        require(stake > 0, "no stake specified");
+        require(stake <= type(uint112).max, "stake overflow");
+
+        // Here VTHO Changes
+        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
+        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
+        bool success = tokenContract.transferFrom(msg.sender, address(this), amount); // Call the approve function
+        require(success, "did not approve the amount passed as argument");
+
         deposits[msg.sender] = DepositInfo(
             info.deposit,
             true,
@@ -104,7 +173,14 @@ abstract contract StakeManager is IStakeManager {
         info.withdrawTime = 0;
         info.stake = 0;
         emit StakeWithdrawn(msg.sender, withdrawAddress, stake);
-        (bool success,) = withdrawAddress.call{value : stake}("");
+
+        
+        // (bool success,) = withdrawAddress.call{value : stake}("");
+        // require(success, "failed to withdraw stake");
+        // Here VTHO Changes
+        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
+        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
+        bool success = tokenContract.transfer(msg.sender, stake);
         require(success, "failed to withdraw stake");
     }
 
@@ -118,7 +194,17 @@ abstract contract StakeManager is IStakeManager {
         require(withdrawAmount <= info.deposit, "Withdraw amount too large");
         info.deposit = uint112(info.deposit - withdrawAmount);
         emit Withdrawn(msg.sender, withdrawAddress, withdrawAmount);
+
+
+
         (bool success,) = withdrawAddress.call{value : withdrawAmount}("");
         require(success, "failed to withdraw");
+
+        // Here VTHO Changes
+        // address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
+        // IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
+        // bool success = tokenContract.transfer(msg.sender, withdrawAmount);
+        // require(success, "failed to withdraw stake");
+
     }
 }

@@ -8,6 +8,12 @@ pragma solidity ^0.8.12;
 import "../interfaces/IAccount.sol";
 import "../interfaces/IEntryPoint.sol";
 import "./Helpers.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+// For manual VTHO receive
+interface IReceiver {
+    function receiveVTHO() external;
+}
 
 /**
  * Basic account implementation.
@@ -86,11 +92,33 @@ abstract contract BaseAccount is IAccount {
      * @param missingAccountFunds the minimum value this method should send the entrypoint.
      *  this value MAY be zero, in case there is enough deposit, or the userOp has a paymaster.
      */
+    // function _payPrefund(uint256 missingAccountFunds) internal virtual {
+    //     if (missingAccountFunds != 0) {
+    //         (bool success,) = payable(msg.sender).call{value : missingAccountFunds, gas : type(uint256).max}("");
+    //         (success);
+    //         //ignore failure (its EntryPoint's job to verify, not account.)
+    //     }
+    // }
+
     function _payPrefund(uint256 missingAccountFunds) internal virtual {
         if (missingAccountFunds != 0) {
-            (bool success,) = payable(msg.sender).call{value : missingAccountFunds, gas : type(uint256).max}("");
+            // Here VTHO Changes
+            address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
+            IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
+            bool success = tokenContract.approve(msg.sender, missingAccountFunds); // Call the approve function
+            require(success, "Token transfer failed");
+            
+            // The issue is in here, this is not called correclty?
+            // Or does the EntryPoint need VET from the SimpleAccount to work properly?
+
+            IReceiver(msg.sender).receiveVTHO();
             (success);
-            //ignore failure (its EntryPoint's job to verify, not account.)
+
+            
+            // Also keep old code
+            // (bool success1,) = payable(msg.sender).call{value : missingAccountFunds, gas : type(uint256).max}("");
+            // (success1);
         }
     }
+
 }
