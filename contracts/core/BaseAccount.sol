@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // For manual VTHO receive
 interface IReceiver {
-    function receiveVTHO() external;
+    function receiveVTHO(uint256) external returns(bool);
 }
 
 /**
@@ -102,22 +102,15 @@ abstract contract BaseAccount is IAccount {
 
     function _payPrefund(uint256 missingAccountFunds) internal virtual {
         if (missingAccountFunds != 0) {
-            // Here VTHO Changes
-            address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
-            IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
-            bool success = tokenContract.approve(msg.sender, missingAccountFunds); // Call the approve function
+            
+            address tokenAddress = 0x0000000000000000000000000000456E65726779;
+            IERC20 tokenContract = IERC20(tokenAddress);
+            
+            bool success = tokenContract.approve(msg.sender, missingAccountFunds);
             require(success, "Token transfer failed");
-            
-            // The issue is in here, this is not called correclty?
-            // Or does the EntryPoint need VET from the SimpleAccount to work properly?
 
-            IReceiver(msg.sender).receiveVTHO();
-            (success);
-
-            
-            // Also keep old code
-            // (bool success1,) = payable(msg.sender).call{value : missingAccountFunds, gas : type(uint256).max}("");
-            // (success1);
+            bool receiveSuccess = IReceiver(msg.sender).receiveVTHO(missingAccountFunds);
+            (receiveSuccess);
         }
     }
 

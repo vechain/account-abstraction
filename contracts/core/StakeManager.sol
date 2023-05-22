@@ -13,6 +13,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  */
 abstract contract StakeManager is IStakeManager {
 
+    address tokenAddress = 0x0000000000000000000000000000456E65726779;
+    IERC20 tokenContract = IERC20(tokenAddress); 
+
     /// maps paymaster to their deposits and stakes
     mapping(address => DepositInfo) public deposits;
 
@@ -33,37 +36,26 @@ abstract contract StakeManager is IStakeManager {
         return deposits[account].deposit;
     }
 
-    function _getAllowedTokens() private returns (uint256) {
-        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
-        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
-
-        // Get how much the EntryPoint was allowed from the Account
+    function _getMaxAllowedTokens() private view returns (uint256) {
         uint256 allowance = tokenContract.allowance(msg.sender, address(this));
-
-        if(allowance > 0){
-            // Take the approved coins
-            bool success = tokenContract.transferFrom(msg.sender, address(this), allowance); // Call the approve function
-            require(success, "Token transfer failed");
-        }
         return allowance;
     }
 
-    // Here VTHO Changes
     receive() external payable {
-        // uint256 vthoEquivalent = msg.value; //some VET <-> VTHO convertion needs to happen here
-        // depositVTHOTo(msg.sender, vthoEquivalent);
-
-        _getAllowedTokens();
-        
-
-        // Also keep old code
         depositTo(msg.sender);
     }
 
-    function receiveVTHO() external{
-        uint256 allowance = _getAllowedTokens();
+    function receiveVTHO(uint256 receiveAmount) external returns(bool){
+        uint256 allowance = _getMaxAllowedTokens();
+        require(allowance >= receiveAmount, "Cannot receive more than allowance");
+
+        bool success = tokenContract.transferFrom(msg.sender, address(this), allowance);
+        require(success, "Token transfer failed");
+
         uint256 vthoEquivalent = allowance; //some VET <-> VTHO convertion needs to happen here
         depositVTHOTo(msg.sender, vthoEquivalent);
+
+        return success;
     }
 
 
@@ -127,10 +119,7 @@ abstract contract StakeManager is IStakeManager {
         require(stake > 0, "no stake specified");
         require(stake <= type(uint112).max, "stake overflow");
 
-        // Here VTHO Changes
-        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
-        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
-        bool success = tokenContract.transferFrom(msg.sender, address(this), amount); // Call the approve function
+        bool success = tokenContract.transferFrom(msg.sender, address(this), amount);
         require(success, "did not approve the amount passed as argument");
 
         deposits[msg.sender] = DepositInfo(
@@ -174,12 +163,6 @@ abstract contract StakeManager is IStakeManager {
         info.stake = 0;
         emit StakeWithdrawn(msg.sender, withdrawAddress, stake);
 
-        
-        // (bool success,) = withdrawAddress.call{value : stake}("");
-        // require(success, "failed to withdraw stake");
-        // Here VTHO Changes
-        address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
-        IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
         bool success = tokenContract.transfer(msg.sender, stake);
         require(success, "failed to withdraw stake");
     }
@@ -195,16 +178,7 @@ abstract contract StakeManager is IStakeManager {
         info.deposit = uint112(info.deposit - withdrawAmount);
         emit Withdrawn(msg.sender, withdrawAddress, withdrawAmount);
 
-
-
-        (bool success,) = withdrawAddress.call{value : withdrawAmount}("");
-        require(success, "failed to withdraw");
-
-        // Here VTHO Changes
-        // address tokenAddress = 0x0000000000000000000000000000456E65726779; // VTHO
-        // IERC20 tokenContract = IERC20(tokenAddress); // Cast the address to IERC20
-        // bool success = tokenContract.transfer(msg.sender, withdrawAmount);
-        // require(success, "failed to withdraw stake");
-
+        bool success = tokenContract.transfer(msg.sender, withdrawAmount);
+        require(success, "failed to withdraw stake");
     }
 }
