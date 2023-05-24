@@ -14,7 +14,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 abstract contract StakeManager is IStakeManager {
 
     address tokenAddress = 0x0000000000000000000000000000456E65726779;
-    IERC20 tokenContract = IERC20(tokenAddress); 
+    IERC20 tokenContract = IERC20(tokenAddress);
+    string revertReason = "should only send VTHO to EntryPoint";
 
     /// maps paymaster to their deposits and stakes
     mapping(address => DepositInfo) public deposits;
@@ -42,7 +43,7 @@ abstract contract StakeManager is IStakeManager {
     }
 
     receive() external payable {
-        depositTo(msg.sender);
+        require(false, "Should only send VTHO to the EntryPoint");
     }
 
     function receiveVTHO(uint256 receiveAmount) external returns(bool){
@@ -58,15 +59,11 @@ abstract contract StakeManager is IStakeManager {
         return success;
     }
 
-
-
-        // Here VTHO Changes
-    function depositVTHOTo(address account, uint256 amount) public payable {
+    function depositVTHOTo(address account, uint256 amount) public {
         _incrementDeposit(account, amount);
         DepositInfo storage info = deposits[account];
         emit Deposited(account, info.deposit);
     }
-
 
     function _incrementDeposit(address account, uint256 amount) internal {
         DepositInfo storage info = deposits[account];
@@ -79,9 +76,7 @@ abstract contract StakeManager is IStakeManager {
      * add to the deposit of the given account
      */
     function depositTo(address account) public payable {
-        _incrementDeposit(account, msg.value);
-        DepositInfo storage info = deposits[account];
-        emit Deposited(account, info.deposit);
+        require(false, revertReason);
     }
 
     /**
@@ -89,21 +84,8 @@ abstract contract StakeManager is IStakeManager {
      * any pending unstake is first cancelled.
      * @param unstakeDelaySec the new lock duration before the deposit can be withdrawn.
      */
-    function addStake(uint32 unstakeDelaySec) public payable {
-        DepositInfo storage info = deposits[msg.sender];
-        require(unstakeDelaySec > 0, "must specify unstake delay");
-        require(unstakeDelaySec >= info.unstakeDelaySec, "cannot decrease unstake time");
-        uint256 stake = info.stake + msg.value;
-        require(stake > 0, "no stake specified");
-        require(stake <= type(uint112).max, "stake overflow");
-        deposits[msg.sender] = DepositInfo(
-            info.deposit,
-            true,
-            uint112(stake),
-            unstakeDelaySec,
-            0
-        );
-        emit StakeLocked(msg.sender, stake, unstakeDelaySec);
+    function addStake(uint32 unstakeDelaySec) public payable{
+        require(false, revertReason);
     }
 
         /**
@@ -111,7 +93,7 @@ abstract contract StakeManager is IStakeManager {
      * any pending unstake is first cancelled.
      * @param unstakeDelaySec the new lock duration before the deposit can be withdrawn.
      */
-    function addVTHOStake(uint32 unstakeDelaySec, uint256 amount) public payable {
+    function addVTHOStake(uint32 unstakeDelaySec, uint256 amount) public {
         DepositInfo storage info = deposits[msg.sender];
         require(unstakeDelaySec > 0, "must specify unstake delay");
         require(unstakeDelaySec >= info.unstakeDelaySec, "cannot decrease unstake time");
