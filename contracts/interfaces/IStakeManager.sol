@@ -74,6 +74,7 @@ interface IStakeManager {
      * add to the deposit of the given account
      */
     function depositTo(address account) external payable;
+    function depositVTHOTo(address account, uint256 amount) external;
 
     /**
      * add to the account's stake - amount and delay
@@ -81,6 +82,7 @@ interface IStakeManager {
      * @param _unstakeDelaySec the new lock duration before the deposit can be withdrawn.
      */
     function addStake(uint32 _unstakeDelaySec) external payable;
+    function addVTHOStake(uint32 _unstakeDelaySec, uint256 amount) external;
 
     /**
      * attempt to unlock the stake.

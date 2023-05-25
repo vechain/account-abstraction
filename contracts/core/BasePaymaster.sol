@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IPaymaster.sol";
 import "../interfaces/IEntryPoint.sol";
 import "./Helpers.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
  * Helper class for creating a paymaster.
@@ -17,6 +18,8 @@ import "./Helpers.sol";
 abstract contract BasePaymaster is IPaymaster, Ownable {
 
     IEntryPoint immutable public entryPoint;
+    address tokenAddress = 0x0000000000000000000000000000456E65726779;
+    IERC20 tokenContract = IERC20(tokenAddress);
 
     constructor(IEntryPoint _entryPoint) {
         entryPoint = _entryPoint;
@@ -61,7 +64,16 @@ abstract contract BasePaymaster is IPaymaster, Ownable {
      * add a deposit for this paymaster, used for paying for transaction fees
      */
     function deposit() public payable {
-        entryPoint.depositTo{value : msg.value}(address(this));
+        entryPoint.depositTo{value : msg.value}(address(this)); // should revert
+    }
+
+    function depositVTHO(uint256 amount) public {
+        // Aprove first
+        bool success = tokenContract.approve(address(this), amount);
+        require(success, "Token transfer failed");
+
+        // EntryPoint actually transfers the funds to itself
+        entryPoint.depositVTHOTo(address(this), amount);
     }
 
     /**
@@ -78,7 +90,16 @@ abstract contract BasePaymaster is IPaymaster, Ownable {
      * @param unstakeDelaySec - the unstake delay for this paymaster. Can only be increased.
      */
     function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
-        entryPoint.addStake{value : msg.value}(unstakeDelaySec);
+        entryPoint.addStake{value : msg.value}(unstakeDelaySec); // should revert
+    }
+
+    function addVTHOStake(uint32 unstakeDelaySec, uint256 amount) external onlyOwner{
+        // Aprove first
+        bool success = tokenContract.approve(msg.sender, amount);
+        require(success, "Token transfer failed");
+
+        // EntryPoint actually moves the funds to itself
+        entryPoint.addVTHOStake(unstakeDelaySec, amount);
     }
 
     /**

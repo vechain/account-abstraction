@@ -60,6 +60,10 @@ abstract contract StakeManager is IStakeManager {
     }
 
     function depositVTHOTo(address account, uint256 amount) public {
+
+        bool success = tokenContract.transferFrom(account, address(this), amount);
+        require(success, "did not approve the amount passed as argument");
+
         _incrementDeposit(account, amount);
         DepositInfo storage info = deposits[account];
         emit Deposited(account, info.deposit);
