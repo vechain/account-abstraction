@@ -36,6 +36,6 @@ contract MyPaymaster is IPaymaster {
         require(success, "Token transfer failed");
 
         // EntryPoint actually transfers the funds to itself
-        entryPoint.depositVTHOTo(address(this), amount);
+        entryPoint.receiveVTHO(amount);
     }
 }

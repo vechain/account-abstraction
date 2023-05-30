@@ -74,7 +74,7 @@ interface IStakeManager {
      * add to the deposit of the given account
      */
     function depositTo(address account) external payable;
-    function depositVTHOTo(address account, uint256 amount) external;
+    function receiveVTHO(uint256 amount) external returns(bool);
 
     /**
      * add to the account's stake - amount and delay

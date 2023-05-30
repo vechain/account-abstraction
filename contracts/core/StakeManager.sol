@@ -54,15 +54,15 @@ abstract contract StakeManager is IStakeManager {
         require(success, "Token transfer failed");
 
         uint256 vthoEquivalent = allowance; //some VET <-> VTHO convertion needs to happen here
-        depositVTHOTo(msg.sender, vthoEquivalent);
+        _depositVTHOTo(msg.sender, vthoEquivalent);
 
         return success;
     }
 
-    function depositVTHOTo(address account, uint256 amount) public {
+    function _depositVTHOTo(address account, uint256 amount) private {
 
-        bool success = tokenContract.transferFrom(account, address(this), amount);
-        require(success, "did not approve the amount passed as argument");
+        // bool success = tokenContract.transferFrom(account, address(this), amount);
+        // require(success, "did not approve the amount passed as argument");
 
         _incrementDeposit(account, amount);
         DepositInfo storage info = deposits[account];
