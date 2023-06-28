@@ -70,19 +70,17 @@ interface IStakeManager {
     /// @return the deposit (for gas payment) of the account
     function balanceOf(address account) external view returns (uint256);
 
-    /**
-     * add to the deposit of the given account
-     */
-    function depositTo(address account) external payable;
-    function receiveVTHO(uint256 amount) external returns(bool);
+    /// Deposit the full amount of VTHO approved by the sender, to the specified account
+    function depositTo(address account) external;
 
-    /**
-     * add to the account's stake - amount and delay
-     * any pending unstake is first cancelled.
-     * @param _unstakeDelaySec the new lock duration before the deposit can be withdrawn.
-     */
-    function addStake(uint32 _unstakeDelaySec) external payable;
-    function addVTHOStake(uint32 _unstakeDelaySec, uint256 amount) external;
+    /// Deposit a fixed amount of VTHO approved by the sender, to the specified account
+    function depositAmountTo(address account, uint256 amount) external;
+
+    /// Stake the full amount of VTHO approved by the sender
+    function addStake(uint32 _unstakeDelaySec) external;
+
+    /// Stake a fixed amount of VTHO approved by the sender
+    function addStakeAmount(uint32 _unstakeDelaySec, uint256 amount) external;
 
     /**
      * attempt to unlock the stake.
