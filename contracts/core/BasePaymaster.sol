@@ -18,8 +18,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 abstract contract BasePaymaster is IPaymaster, Ownable {
 
     IEntryPoint immutable public entryPoint;
-    address tokenAddress = 0x0000000000000000000000000000456E65726779;
-    IERC20 tokenContract = IERC20(tokenAddress);
+
+    address public constant VTHO_TOKEN_ADDRESS = 0x0000000000000000000000000000456E65726779;
+    IERC20 public constant VTHO_TOKEN_CONTRACT = IERC20(VTHO_TOKEN_ADDRESS);
 
     constructor(IEntryPoint _entryPoint) {
         entryPoint = _entryPoint;
@@ -63,17 +64,13 @@ abstract contract BasePaymaster is IPaymaster, Ownable {
     /**
      * add a deposit for this paymaster, used for paying for transaction fees
      */
-    function deposit() public payable {
-        entryPoint.depositTo{value : msg.value}(address(this)); // should revert
-    }
-
-    function depositVTHO(uint256 amount) public {
-        // Aprove first
-        bool success = tokenContract.approve(address(this), amount);
-        require(success, "Token transfer failed");
-
-        // EntryPoint actually transfers the funds to itself
-        entryPoint.receiveVTHO(amount);
+    function deposit() public {
+        uint256 allowance = VTHO_TOKEN_ADDRESS.allowance(msg.sender);
+        if (allowance > 0) {
+            require(VTHO_TOKEN_CONTRACT.transferFrom(msg.sender, allowance), "deposit transfer failed");
+            require(VTHO_TOKEN_CONTRACT.approve(entryPoint(), allowance), "deposit approval failed");
+            entryPoint.depositTo(address(this), allowance);
+        }
     }
 
     /**
@@ -86,20 +83,15 @@ abstract contract BasePaymaster is IPaymaster, Ownable {
     }
     /**
      * add stake for this paymaster.
-     * This method can also carry eth value to add to the current stake.
      * @param unstakeDelaySec - the unstake delay for this paymaster. Can only be increased.
      */
-    function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
-        entryPoint.addStake{value : msg.value}(unstakeDelaySec); // should revert
-    }
-
-    function addVTHOStake(uint32 unstakeDelaySec, uint256 amount) external onlyOwner{
-        // Aprove first
-        bool success = tokenContract.approve(msg.sender, amount);
-        require(success, "Token transfer failed");
-
-        // EntryPoint actually moves the funds to itself
-        entryPoint.addVTHOStake(unstakeDelaySec, amount);
+    function addStake(uint32 _unstakeDelaySec) external payable onlyOwner {
+        uint256 allowance = VTHO_TOKEN_ADDRESS.allowance(msg.sender);
+        if (allowance > 0) {
+            require(VTHO_TOKEN_CONTRACT.transferFrom(msg.sender, allowance), "stake transfer failed");
+            require(VTHO_TOKEN_CONTRACT.approve(entryPoint(), allowance), "stake approval failed");
+            entryPoint.addStake(_unstakeDelaySec);
+        }
     }
 
     /**

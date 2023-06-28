@@ -27,6 +27,9 @@ abstract contract BaseAccount is IAccount {
     // equivalent to _packValidationData(true,0,0);
     uint256 constant internal SIG_VALIDATION_FAILED = 1;
 
+    address public constant VTHO_TOKEN_ADDRESS = 0x0000000000000000000000000000456E65726779;
+    IERC20 public constant VTHO_TOKEN_CONTRACT = IERC20(VTHO_TOKEN_ADDRESS);
+
     /**
      * return the account nonce.
      * subclass should return a nonce value that is used both by _validateAndUpdateNonce, and by the external provider (to read the current nonce)
@@ -92,25 +95,10 @@ abstract contract BaseAccount is IAccount {
      * @param missingAccountFunds the minimum value this method should send the entrypoint.
      *  this value MAY be zero, in case there is enough deposit, or the userOp has a paymaster.
      */
-    // function _payPrefund(uint256 missingAccountFunds) internal virtual {
-    //     if (missingAccountFunds != 0) {
-    //         (bool success,) = payable(msg.sender).call{value : missingAccountFunds, gas : type(uint256).max}("");
-    //         (success);
-    //         //ignore failure (its EntryPoint's job to verify, not account.)
-    //     }
-    // }
-
     function _payPrefund(uint256 missingAccountFunds) internal virtual {
         if (missingAccountFunds != 0) {
-            
-            address tokenAddress = 0x0000000000000000000000000000456E65726779;
-            IERC20 tokenContract = IERC20(tokenAddress);
-            
-            bool success = tokenContract.approve(msg.sender, missingAccountFunds);
-            require(success, "Token transfer failed");
-
-            bool receiveSuccess = IReceiver(msg.sender).receiveVTHO(missingAccountFunds);
-            (receiveSuccess);
+            require(VTHO_TOKEN_CONTRACT.approve(entryPoint(), missingAccountFunds), "prefund approval failed");
+            entryPoint().depositAmountTo(msg.sender, missingAccountFunds);
         }
     }
 
