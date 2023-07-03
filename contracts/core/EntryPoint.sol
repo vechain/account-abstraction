@@ -265,7 +265,7 @@ contract EntryPoint is IEntryPoint, StakeManager {
      * the request ID is a hash over the content of the userOp (except the signature), the entrypoint and the chainid.
      */
     function getUserOpHash(UserOperation calldata userOp) public view returns (bytes32) {
-        return keccak256(abi.encode(userOp.hash(), address(this), block.chainid));
+        return keccak256(abi.encode(userOp.hash(), address(this), block.chainid & 0xff));
     }
 
     /**
