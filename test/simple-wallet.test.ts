@@ -66,7 +66,8 @@ describe('SimpleAccount', function () {
   it('should pack in js the same as solidity', async () => {
     const op = await fillUserOpDefaults({ sender: accounts[0] })
     const packed = packUserOp(op)
-    expect(await testUtil.packUserOp(op)).to.equal(packed)
+    const actual = await testUtil.packUserOp(op);
+    expect(actual).to.equal(packed)
   })
 
   describe('#executeBatch', () => {
@@ -177,7 +178,7 @@ describe('SimpleAccount', function () {
         const callGasLimit = 200000
         const verificationGasLimit = 100000
         const maxFeePerGas = 3e9
-        const chainId = await ethers.provider.getNetwork().then(net => net.chainId)
+        const chainId = await ethers.provider.send('eth_chainId', []); //await ethers.provider.getNetwork().then(net => net.chainId)
   
         userOp = signUserOp(fillUserOpDefaults({
           sender: account.address,
