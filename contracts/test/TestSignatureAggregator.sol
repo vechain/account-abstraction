@@ -12,6 +12,8 @@ import "../samples/SimpleAccount.sol";
  * the aggregated signature is the SUM of the nonce fields..
  */
 contract TestSignatureAggregator is IAggregator {
+    address public constant VTHO_TOKEN_ADDRESS = 0x0000000000000000000000000000456E65726779;
+    IERC20 public constant VTHO_TOKEN_CONTRACT = IERC20(VTHO_TOKEN_ADDRESS);
 
     /// @inheritdoc IAggregator
     function validateSignatures(UserOperation[] calldata userOps, bytes calldata signature) external pure override {
@@ -47,7 +49,9 @@ contract TestSignatureAggregator is IAggregator {
      * @param entryPoint - the EntryPoint to send the stake to.
      * @param delay - the new lock duration before the deposit can be withdrawn.
      */
-    function addStake(IEntryPoint entryPoint, uint32 delay) external payable {
-        entryPoint.addStake{value: msg.value}(delay);
+    function addStake(IEntryPoint entryPoint, uint32 delay, uint256 amount) external {
+        require(VTHO_TOKEN_CONTRACT.transferFrom(msg.sender, address(this), amount), "aggregator stake transfer failed");
+        require(VTHO_TOKEN_CONTRACT.approve(address(entryPoint), amount), "aggregator stake approval failed");
+        entryPoint.addStakeAmount(delay, amount);
     }
 }

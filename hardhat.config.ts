@@ -1,40 +1,42 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+import '@nomiclabs/hardhat-waffle'
+import '@typechain/hardhat'
+import { HardhatUserConfig } from 'hardhat/config'
+import 'hardhat-deploy'
+import '@nomiclabs/hardhat-etherscan'
 
-import '@nomiclabs/hardhat-truffle5';
-import '@vechain/hardhat-vechain';
-import '@vechain/hardhat-web3';
-import '@vechain/hardhat-ethers';
+import '@nomiclabs/hardhat-truffle5'
+import { VECHAIN_URL_SOLO } from '@vechain/hardhat-vechain'
+import '@vechain/hardhat-ethers'
+import '@vechain/hardhat-web3'
+
+const optimizedComilerSettings = {
+  version: '0.8.17',
+  settings: {
+    optimizer: { enabled: true, runs: 1000000 }
+  }
+}
+
+// You need to export an object to set up your config
+// Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.18",  
-};
-
-
-module.exports = {
   solidity: {
-      version: "0.8.18",
-      gasLimit: 10000000,
+    compilers: [{
+      version: '0.8.15',
       settings: {
-        optimizer: {
-          enabled: true,
-          runs: 1000,
-        },
-      },
+        optimizer: { enabled: true, runs: 1000000 }
+      }
+    }]
   },
-  allowUnlimitedContractSize: true,
   networks: {
     vechain: {
-      url: "http://127.0.0.1:8669",
-      accounts: {
-        mnemonic: "denial kitchen pet squirrel other broom bar gas better priority spoil cross",
-        count: 10,
-      },
-      restful: true,
-      gas: 10000000,
+      url: VECHAIN_URL_SOLO
     }
-  }
-};
+  },
+  mocha: {
+    timeout: 180000
+  },
+}
 
 
-export default config;
+export default config

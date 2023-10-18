@@ -1,3 +1,33 @@
+import config from './config';
+import {
+  ERC20__factory,
+  EntryPoint,
+  EntryPoint__factory,
+  SimpleAccountFactory,
+  SimpleAccountFactory__factory
+} from '../typechain'
+
+export async function createAccount (
+  ethersSigner: Signer,
+  accountOwner: string,
+): Promise<{
+    proxy: SimpleAccount
+    accountFactory: SimpleAccountFactory
+  }>
+{
+  const accountFactory = new SimpleAccountFactory__factory()
+    .attach(config.simpleAccountFactoryAddress)
+    .connect(ethersSigner);
+  await accountFactory.createAccount(accountOwner, 0);
+  const accountAddress = await accountFactory.getAddress(accountOwner, 0);
+  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner);
+  return {
+    accountFactory,
+    proxy
+  };
+}
+
+
 import { ethers } from 'hardhat'
 import {
   arrayify,
@@ -7,25 +37,26 @@ import {
 } from 'ethers/lib/utils'
 import { BigNumber, BigNumberish, Contract, ContractReceipt, Signer, Wallet } from 'ethers'
 import {
-  EntryPoint,
-  EntryPoint__factory,
   IERC20,
   IEntryPoint,
   SimpleAccount,
-  SimpleAccountFactory__factory,
-  SimpleAccount__factory, SimpleAccountFactory, TestAggregatedAccountFactory
+  SimpleAccount__factory, TestAggregatedAccountFactory
 } from '../typechain'
 import { BytesLike } from '@ethersproject/bytes'
 import { expect } from 'chai'
-import { Create2Factory } from '../src/Create2Factory'
-import { debugTransaction } from './debugTx'
+import { debugTransaction } from './_debugTx'
 import { UserOperation } from './UserOperation'
+import { randomInt } from 'crypto';
 
 export const AddressZero = ethers.constants.AddressZero
 export const HashZero = ethers.constants.HashZero
 export const ONE_ETH = parseEther('1')
 export const TWO_ETH = parseEther('2')
 export const FIVE_ETH = parseEther('5')
+
+const signer2 = ethers.provider.getSigner(2)
+const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
+const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
 
 export const tostr = (x: any): string => x != null ? x.toString() : 'null'
 
@@ -59,11 +90,18 @@ export async function getTokenBalance (token: IERC20, address: string): Promise<
   return parseInt(balance.toString())
 }
 
-let counter = 0
+let seed = randomInt(2^16);
 
 // create non-random account, so gas calculations are deterministic
 export function createAccountOwner (): Wallet {
-  const privateKey = keccak256(Buffer.from(arrayify(BigNumber.from(++counter))))
+  const privateKey = keccak256(Buffer.from(arrayify(BigNumber.from(++seed))))
+  return new ethers.Wallet(privateKey, ethers.provider)
+  // return new ethers.Wallet('0x'.padEnd(66, privkeyBase), ethers.provider);
+}
+
+// create random account, since we are using thor
+export function createRandomAccountOwner (): Wallet {
+  const privateKey = keccak256(Buffer.from(arrayify(BigNumber.from(ethers.utils.randomBytes(32)))))
   return new ethers.Wallet(privateKey, ethers.provider)
   // return new ethers.Wallet('0x'.padEnd(66, privkeyBase), ethers.provider);
 }
@@ -72,11 +110,29 @@ export function createAddress (): string {
   return createAccountOwner().address
 }
 
+export function createRandomAddress(): string {
+  return createRandomAccountOwner().address
+}
+
 export function callDataCost (data: string): number {
   return ethers.utils.arrayify(data)
     .map(x => x === 0 ? 4 : 16)
     .reduce((sum, x) => sum + x)
 }
+
+export async function fundVtho(contractOrAddress: string | Contract, ONE_HUNDERD_VTHO = '100000000000000000000'): Promise<void> {
+  let address: string
+  if (typeof contractOrAddress === 'string') {
+    address = contractOrAddress
+  } else {
+    address = contractOrAddress.address
+  }
+
+  await vtho.transfer(address, BigNumber.from(ONE_HUNDERD_VTHO)); // send VTHO
+  // Fund preAddr through EntryPoint
+  await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
+  await entryPoint.depositAmountTo(address, BigNumber.from(ONE_HUNDERD_VTHO));
+} 
 
 export async function calcGasUsage (rcpt: ContractReceipt, entryPoint: EntryPoint, beneficiaryAddress?: string): Promise<{ actualGasCost: BigNumberish }> {
   const actualGas = await rcpt.gasUsed
@@ -263,13 +319,6 @@ export function simulationResultWithAggregationCatch (e: any): any {
   return e.errorArgs
 }
 
-export async function deployEntryPoint (provider = ethers.provider): Promise<EntryPoint> {
-  const create2factory = new Create2Factory(provider)
-  const epf = new EntryPoint__factory(provider.getSigner())
-  const addr = await create2factory.deploy(epf.bytecode, 0, process.env.COVERAGE != null ? 20e6 : 8e6)
-  return EntryPoint__factory.connect(addr, provider.getSigner())
-}
-
 export async function isDeployed (addr: string): Promise<boolean> {
   const code = await ethers.provider.getCode(addr)
   return code.length > 2
@@ -284,26 +333,23 @@ export function userOpsWithoutAgg (userOps: UserOperation[]): IEntryPoint.UserOp
   }]
 }
 
-// Deploys an implementation and a proxy pointing to this implementation
-export async function createAccount (
+export async function createRandomAccount (
   ethersSigner: Signer,
   accountOwner: string,
-  entryPoint: string,
-  _factory?: SimpleAccountFactory
-):
-  Promise<{
+): Promise<{
     proxy: SimpleAccount
     accountFactory: SimpleAccountFactory
-    implementation: string
-  }> {
-  const accountFactory = _factory ?? await new SimpleAccountFactory__factory(ethersSigner).deploy(entryPoint)
-  const implementation = await accountFactory.accountImplementation()
-  await accountFactory.createAccount(accountOwner, 0)
-  const accountAddress = await accountFactory.getAddress(accountOwner, 0)
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
+  }>
+{
+  const accountFactory = new SimpleAccountFactory__factory()
+    .attach(config.simpleAccountFactoryAddress)
+    .connect(ethersSigner);
+  let salt = seed++
+  await accountFactory.createAccount(accountOwner, salt);
+  const accountAddress = await accountFactory.getAddress(accountOwner, salt);
+  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner);
   return {
-    implementation,
     accountFactory,
     proxy
-  }
+  };
 }

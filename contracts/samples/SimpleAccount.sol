@@ -9,7 +9,9 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
+import "../interfaces/IStakeManager.sol";
 import "../core/BaseAccount.sol";
+import "./callback/TokenCallbackHandler.sol";
 
 /**
   * minimal account.
@@ -17,20 +19,16 @@ import "../core/BaseAccount.sol";
   *  has execute, eth handling methods
   *  has a single signer that can send requests through the entryPoint.
   */
-contract SimpleAccount is BaseAccount, UUPSUpgradeable, Initializable {
+contract SimpleAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     using ECDSA for bytes32;
 
-    //filler member, to push the nonce and owner to the same slot
-    // the "Initializeble" class takes 2 bytes in the first slot
-    bytes28 private _filler;
-
-    //explicit sizes of nonce, to fit a single storage cell with "owner"
-    uint96 private _nonce;
     address public owner;
 
     IEntryPoint private immutable _entryPoint;
 
     event SimpleAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner);
+
+
 
     modifier onlyOwner() {
         _onlyOwner();
@@ -38,15 +36,21 @@ contract SimpleAccount is BaseAccount, UUPSUpgradeable, Initializable {
     }
 
     /// @inheritdoc BaseAccount
-    function nonce() public view virtual override returns (uint256) {
-        return _nonce;
-    }
-
-    /// @inheritdoc BaseAccount
     function entryPoint() public view virtual override returns (IEntryPoint) {
         return _entryPoint;
     }
 
+    function deposit(uint256 amount) public {
+        _onlyOwner();
+        require(VTHO_TOKEN_CONTRACT.approve(address(_entryPoint), amount), "Aproval to EntryPoint Failed");
+        _entryPoint.depositAmountTo(address(this), amount);
+    }
+
+    function withdrawAll() public {
+        _onlyOwner();
+        IStakeManager.DepositInfo memory depositInfo = _entryPoint.getDepositInfo(address(this));
+        _entryPoint.withdrawTo(address(this), depositInfo.deposit);
+    }
 
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
@@ -65,27 +69,16 @@ contract SimpleAccount is BaseAccount, UUPSUpgradeable, Initializable {
      * execute a transaction (called directly from owner, or by entryPoint)
      */
     function execute(address dest, uint256 value, bytes calldata func) external {
-        // _requireFromEntryPointOrOwnerOrSelf();
+        _requireFromEntryPointOrOwner();
         _call(dest, value, func);
-    }
-
-    function test() public {
-        address payable _to = payable(0x94C576C6Fdf76EDdCA1e88e4A0169CDcc23e5539);
-        uint256 _value = 10000000000000000;
-
-        // Check if the contract has enough balance to make the transfer
-        require(address(this).balance >= _value, "Insufficient contract balance");
-
-        // Transfer the Ether
-        _to.transfer(_value);
     }
 
     /**
      * execute a sequence of transactions
      */
     function executeBatch(address[] calldata dest, bytes[] calldata func) external {
-        // _requireFromEntryPointOrOwnerOrSelf();
-        // require(dest.length == func.length, "wrong array lengths");
+        _requireFromEntryPointOrOwner();
+        require(dest.length == func.length, "wrong array lengths");
         for (uint256 i = 0; i < dest.length; i++) {
             _call(dest[i], 0, func[i]);
         }
@@ -106,21 +99,16 @@ contract SimpleAccount is BaseAccount, UUPSUpgradeable, Initializable {
     }
 
     // Require the function call went through EntryPoint or owner
-    function _requireFromEntryPointOrOwnerOrSelf() internal view {
-        require(msg.sender == address(entryPoint()) || msg.sender == owner || msg.sender == address(this), "account: not Owner or EntryPoint");
-    }
-
-    /// implement template method of BaseAccount
-    function _validateAndUpdateNonce(UserOperation calldata userOp) internal override {
-        require(_nonce++ == userOp.nonce, "account: invalid nonce");
+    function _requireFromEntryPointOrOwner() internal view {
+        require(msg.sender == address(entryPoint()) || msg.sender == owner, "account: not Owner or EntryPoint");
     }
 
     /// implement template method of BaseAccount
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override virtual returns (uint256 validationData) {
-        // bytes32 hash = userOpHash.toEthSignedMessageHash();
-        // if (owner != hash.recover(userOp.signature))
-        //     return SIG_VALIDATION_FAILED;
+        bytes32 hash = userOpHash.toEthSignedMessageHash();
+        if (owner != hash.recover(userOp.signature))
+            return SIG_VALIDATION_FAILED;
         return 0;
     }
 
@@ -133,32 +121,18 @@ contract SimpleAccount is BaseAccount, UUPSUpgradeable, Initializable {
         }
     }
 
-    /**
-     * check current account deposit in the entryPoint
-     */
-    function getDeposit() public view returns (uint256) {
-        return entryPoint().balanceOf(address(this));
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        (newImplementation);
+        _onlyOwner();
     }
 
-    /**
-     * deposit more funds for this account in the entryPoint
-     */
-    function addDeposit() public payable {
-        entryPoint().depositTo{value : msg.value}(address(this));
-    }
-
-    /**
+            /**
      * withdraw value from the account's deposit
      * @param withdrawAddress target to send to
      * @param amount to withdraw
      */
     function withdrawDepositTo(address payable withdrawAddress, uint256 amount) public onlyOwner {
         entryPoint().withdrawTo(withdrawAddress, amount);
-    }
-
-    function _authorizeUpgrade(address newImplementation) internal view override {
-        (newImplementation);
-        _onlyOwner();
     }
 }
 
