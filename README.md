@@ -11,8 +11,19 @@ yarn hardhat test --network vechain test/deploy-contracts.test.ts
 
 Update [./test/config.ts](./test/config.ts) with the addresses of the deployed contracts and
 
+Run entryPoint tests:
 ```bash
-yarn hardhat test
+yarn hardhat test test/entrypoint.test.ts --network vechain
+```
+
+Run paymaster tests:
+```bash
+yarn hardhat test test/paymaster.test.ts --network vechain
+```
+
+Run simple wallet tests:
+```bash
+yarn hardhat test test/simple-wallet.test.ts --network vechain
 ```
 
 # Resources
