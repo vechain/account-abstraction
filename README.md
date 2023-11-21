@@ -1,5 +1,7 @@
 Implementation of contracts for [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337) account abstraction via alternative mempool.
 
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 # Vechain Specific Changes
 The changes mainly concern VTHO support, as the gas unit that is refunded.
 
