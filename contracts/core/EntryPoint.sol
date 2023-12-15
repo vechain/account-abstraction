@@ -353,12 +353,6 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
         requiredPreFund = _getRequiredPrefund(mUserOp);
     }
 
-    function mySimulateValidation(UserOperation calldata userOp) external view returns (uint256 requiredPrefund) {
-        UserOpInfo memory outOpInfo;
-        _simulationOnlyValidations(userOp);
-        requiredPrefund = _myValidatePrepayment(userOp, outOpInfo);
-    }
-
     // create the sender's contract if needed.
     function _createSenderIfNeeded(uint256 opIndex, UserOpInfo memory opInfo, bytes calldata initCode) internal {
         if (initCode.length != 0) {
