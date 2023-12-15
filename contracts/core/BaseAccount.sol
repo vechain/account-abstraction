@@ -48,6 +48,7 @@ abstract contract BaseAccount is IAccount {
         _requireFromEntryPoint();
         validationData = _validateSignature(userOp, userOpHash);
         _validateNonce(userOp.nonce);
+        _payPrefund(missingAccountFunds);
     }
 
     /**
@@ -90,5 +91,13 @@ abstract contract BaseAccount is IAccount {
      * solhint-disable-next-line no-empty-blocks
      */
     function _validateNonce(uint256 nonce) internal view virtual {
+    }
+
+    /**
+     * Should send to the entrypoint (msg.sender) the missing funds for this transaction.
+     * Since we cannot transfer prefund with VTHO (bundler debugTraceCall restrictions), we do nothing instead.
+     * SubClass MAY override this method for better funds management
+     */
+    function _payPrefund(uint256 /* missingAccountFunds */) internal virtual {
     }
 }
