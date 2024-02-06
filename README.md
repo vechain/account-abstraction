@@ -6,10 +6,57 @@ Implementation of contracts for [ERC-4337](https://eips.ethereum.org/EIPS/eip-43
 The changes mainly concern VTHO support, as the gas unit that is refunded.
 
 # Test
-Deploy the contracts with:
+
+## Deploy all on Solo
+
+Make sure your `hardhat.config.ts` has the following line:
+
+```ts
+vechain: {
+    url: VECHAIN_URL_SOLO
+}
+```
+
+
+And then deploy all contracts (entryPoint included)
 ```bash
 yarn hardhat test --network vechain test/deploy-contracts.test.ts
 ```
+
+## Deploy EntryPoint on Testnet
+To deploy on testnet modify the `hardhat.config.ts` with the following
+
+```ts
+vechain: {
+    url: VECHAIN_URL_TESTNET,
+    accounts: {
+        mnemonic: "your testnet mnemonic goes here"
+    },
+}
+```
+
+And run the deployment script
+```bash
+yarn hardhat test --network vechain test/deploy-entrypoint.test.ts
+```
+
+## Deploy EntryPoint on Mainnet
+To deploy on testnet modify the `hardhat.config.ts` with the following
+
+```ts
+vechain: {
+    url: VECHAIN_URL_MAINNET,
+    accounts: {
+        mnemonic: "your mainnet mnemonic goes here"
+    },
+}
+```
+
+And run the deployment script
+```bash
+yarn hardhat test --network vechain test/deploy-entrypoint.test.ts
+```
+
 
 Update [./test/config.ts](./test/config.ts) with the addresses of the deployed contracts and
 
