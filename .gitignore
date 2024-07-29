@@ -18,4 +18,5 @@ artifacts
 .DS_Store
 /contracts/dist/
 /contracts/types/
+/contracts/package-lock.json
 
