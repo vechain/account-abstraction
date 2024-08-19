@@ -1,32 +1,16 @@
-import config from './config';
+import config from './config'
 import {
   ERC20__factory,
   EntryPoint,
   EntryPoint__factory,
   SimpleAccountFactory,
   SimpleAccountFactory__factory
+  ,
+  IERC20,
+  IEntryPoint,
+  SimpleAccount,
+  SimpleAccount__factory, TestAggregatedAccountFactory
 } from '../typechain'
-
-export async function createAccount (
-  ethersSigner: Signer,
-  accountOwner: string,
-): Promise<{
-    proxy: SimpleAccount
-    accountFactory: SimpleAccountFactory
-  }>
-{
-  const accountFactory = new SimpleAccountFactory__factory()
-    .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner);
-  await accountFactory.createAccount(accountOwner, 0);
-  const accountAddress = await accountFactory.getAddress(accountOwner, 0);
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner);
-  return {
-    accountFactory,
-    proxy
-  };
-}
-
 
 import { ethers } from 'hardhat'
 import {
@@ -36,17 +20,30 @@ import {
   parseEther
 } from 'ethers/lib/utils'
 import { BigNumber, BigNumberish, Contract, ContractReceipt, Signer, Wallet } from 'ethers'
-import {
-  IERC20,
-  IEntryPoint,
-  SimpleAccount,
-  SimpleAccount__factory, TestAggregatedAccountFactory
-} from '../typechain'
 import { BytesLike } from '@ethersproject/bytes'
 import { expect } from 'chai'
 import { debugTransaction } from './_debugTx'
 import { UserOperation } from './UserOperation'
-import { randomInt } from 'crypto';
+import { randomInt } from 'crypto'
+
+export async function createAccount (
+  ethersSigner: Signer,
+  accountOwner: string
+): Promise<{
+    proxy: SimpleAccount
+    accountFactory: SimpleAccountFactory
+  }> {
+  const accountFactory = new SimpleAccountFactory__factory()
+    .attach(config.simpleAccountFactoryAddress)
+    .connect(ethersSigner)
+  await accountFactory.createAccount(accountOwner, 0)
+  const accountAddress = await accountFactory.getAddress(accountOwner, 0)
+  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
+  return {
+    accountFactory,
+    proxy
+  }
+}
 
 export const AddressZero = ethers.constants.AddressZero
 export const HashZero = ethers.constants.HashZero
@@ -90,7 +87,7 @@ export async function getTokenBalance (token: IERC20, address: string): Promise<
   return parseInt(balance.toString())
 }
 
-let seed = randomInt(2^16);
+let seed = randomInt(2 ^ 16)
 
 // create non-random account, so gas calculations are deterministic
 export function createAccountOwner (): Wallet {
@@ -110,7 +107,7 @@ export function createAddress (): string {
   return createAccountOwner().address
 }
 
-export function createRandomAddress(): string {
+export function createRandomAddress (): string {
   return createRandomAccountOwner().address
 }
 
@@ -120,7 +117,7 @@ export function callDataCost (data: string): number {
     .reduce((sum, x) => sum + x)
 }
 
-export async function fundVtho(contractOrAddress: string | Contract, ONE_HUNDERD_VTHO = '100000000000000000000'): Promise<void> {
+export async function fundVtho (contractOrAddress: string | Contract, ONE_HUNDERD_VTHO = '100000000000000000000'): Promise<void> {
   let address: string
   if (typeof contractOrAddress === 'string') {
     address = contractOrAddress
@@ -128,11 +125,11 @@ export async function fundVtho(contractOrAddress: string | Contract, ONE_HUNDERD
     address = contractOrAddress.address
   }
 
-  await vtho.transfer(address, BigNumber.from(ONE_HUNDERD_VTHO)); // send VTHO
+  await vtho.transfer(address, BigNumber.from(ONE_HUNDERD_VTHO)) // send VTHO
   // Fund preAddr through EntryPoint
-  await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-  await entryPoint.depositAmountTo(address, BigNumber.from(ONE_HUNDERD_VTHO));
-} 
+  await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+  await entryPoint.depositAmountTo(address, BigNumber.from(ONE_HUNDERD_VTHO))
+}
 
 export async function calcGasUsage (rcpt: ContractReceipt, entryPoint: EntryPoint, beneficiaryAddress?: string): Promise<{ actualGasCost: BigNumberish }> {
   const actualGas = await rcpt.gasUsed
@@ -335,21 +332,20 @@ export function userOpsWithoutAgg (userOps: UserOperation[]): IEntryPoint.UserOp
 
 export async function createRandomAccount (
   ethersSigner: Signer,
-  accountOwner: string,
+  accountOwner: string
 ): Promise<{
     proxy: SimpleAccount
     accountFactory: SimpleAccountFactory
-  }>
-{
+  }> {
   const accountFactory = new SimpleAccountFactory__factory()
     .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner);
-  let salt = seed++
-  await accountFactory.createAccount(accountOwner, salt);
-  const accountAddress = await accountFactory.getAddress(accountOwner, salt);
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner);
+    .connect(ethersSigner)
+  const salt = seed++
+  await accountFactory.createAccount(accountOwner, salt)
+  const accountAddress = await accountFactory.getAddress(accountOwner, salt)
+  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
   return {
     accountFactory,
     proxy
-  };
+  }
 }
