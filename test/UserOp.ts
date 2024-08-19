@@ -12,6 +12,7 @@ import {
 } from '../typechain'
 import { UserOperation } from './UserOperation'
 import { Create2Factory } from '../src/Create2Factory'
+import { ethers } from 'hardhat'
 
 export function packUserOp (op: UserOperation, forSignature = true): string {
   if (forSignature) {

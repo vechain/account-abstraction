@@ -40,6 +40,7 @@ import {
   checkForBannedOps,
   createAccount,
   createAccountOwner,
+  createAccountWithEntrypoint,
   createAddress,
   createRandomAccount,
   createRandomAccountOwner,
@@ -80,12 +81,13 @@ describe('EntryPoint', function () {
 
   before(async function () {
     const chainId = await ethers.provider.send('eth_chainId', []) // await ethers.provider.getNetwork().then(net => net.chainId);
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
+    const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+    const entryPoint = await entryPointFactory.deploy()
 
     accountOwner = createAccountOwner()
     const {
-      proxy: account
-    } = await createAccount(ethersSigner, await accountOwner.getAddress())
+      account
+    } = await createAccountWithEntrypoint(await accountOwner.getAddress(), entryPoint.address)
     await fund(account)
 
     // sanity: validate helper functions
@@ -93,10 +95,11 @@ describe('EntryPoint', function () {
       sender: account.address
     }, accountOwner, entryPoint)
 
-    expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(await entryPoint.getUserOpHash(sampleOp))
+    const actualOpHash = await entryPoint.getUserOpHash(sampleOp)
+    expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(actualOpHash)
   })
 
-  describe('Stake Management', () => {
+  describe.only('Stake Management', () => {
     describe('with deposit', () => {
       let address2: string
       const signer2 = ethers.provider.getSigner(2)

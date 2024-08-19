@@ -1,8 +1,6 @@
-import { Create2Factory } from '../src/Create2Factory'
-import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory, SimpleAccount__factory, TestToken__factory, TestUtil } from '../typechain'
-import { Provider } from '@ethersproject/providers'
+import { ethers } from 'hardhat'
+import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory, TestUtil } from '../typechain'
 
 const TestUtil = artifacts.require('TestUtil')
 const EntryPoint = artifacts.require('EntryPoint')

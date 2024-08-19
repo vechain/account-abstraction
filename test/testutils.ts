@@ -44,6 +44,25 @@ export async function createAccount (
   }
 }
 
+export async function createAccountWithEntrypoint (
+  accountOwner: string,
+  entryPointAddress: string
+): Promise<{
+    account: SimpleAccount
+    accountFactory: SimpleAccountFactory
+  }> {
+  const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+  const accountFactory = await accountFactoryFactory.deploy(entryPointAddress)
+  await accountFactory.createAccount(accountOwner, 0)
+  //const accountAddress = await accountFactory.getAddress(accountOwner, 0)
+  const proxyAccountFactory = await ethers.getContractFactory('SimpleAccount')
+  const account = await proxyAccountFactory.deploy(entryPointAddress)
+  return {
+    accountFactory,
+    account
+  }
+}
+
 export const AddressZero = ethers.constants.AddressZero
 export const HashZero = ethers.constants.HashZero
 export const ONE_ETH = parseEther('1')
