@@ -2,9 +2,8 @@ version: "3.9"
 
 services:
   thor-solo:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: vechain/thor:v2.0.0
+    hostname: thor-solo
     container_name: thor-solo
     user: root
     ports:
