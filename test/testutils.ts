@@ -33,9 +33,8 @@ export async function createAccount (
     proxy: SimpleAccount
     accountFactory: SimpleAccountFactory
   }> {
-  const accountFactory = new SimpleAccountFactory__factory()
-    .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner)
+  const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+  const accountFactory = await accountFactoryFactory.deploy(config.entryPointAddress)
   await accountFactory.createAccount(accountOwner, 0)
   const accountAddress = await accountFactory.getAddress(accountOwner, 0)
   const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
