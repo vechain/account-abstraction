@@ -1598,17 +1598,7 @@
   resolved "https://registry.yarnpkg.com/@vechain/hardhat-web3/-/hardhat-web3-0.0.4.tgz#9159be69b648d7f7c0f61d05c89b35da9e1a0927"
   integrity sha512-I11LHB3wPchTdkqE0tI2TE2gE+TLJlAV2rPmCTnTSY33678knnKLw4e0BU6KA15tsKr+tNBtZP6kIptwBJUgSw==
 
-"@vechain/web3-providers-connex@1.1.2":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@vechain/web3-providers-connex/-/web3-providers-connex-1.1.2.tgz#4c8541fc3b9da3ff958f9a28be2eaf7a3c0b3445"
-  integrity sha512-YvteUeJaxpYDfEKswAPn9F9YeJgS+gMEBAGIiQQiEe22UayFQGqQjrr2F9huMIyWxOXr9jBzV9lYVKVzI61WSQ==
-  dependencies:
-    "@vechain/connex-types" "^2.0.2"
-    eventemitter3 "^4.0.4"
-    thor-devkit "^2.0.4"
-    web3-utils "^1.7.3"
-
-"@vechain/web3-providers-connex@^1.0.0":
+"@vechain/web3-providers-connex@1.0.0", "@vechain/web3-providers-connex@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@vechain/web3-providers-connex/-/web3-providers-connex-1.0.0.tgz#60807a47c5f4b426faa78b78ec44448bd0ea2d1d"
   integrity sha512-FHtmWNU4ljUOXRZM0ZhVUXkH5GNJJGGgUTCcuyb7MVkrsfCHsJhxRLZbRIGFhA1yFKVEV6t2C1axb872iB/S1A==
