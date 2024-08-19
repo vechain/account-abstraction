@@ -82,11 +82,10 @@ describe('EntryPoint', function () {
     const chainId = await ethers.provider.send('eth_chainId', []) // await ethers.provider.getNetwork().then(net => net.chainId);
     const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
 
-    accountOwner = createAccountOwner();
-    ({
-      proxy: account,
-      accountFactory: simpleAccountFactory
-    } = await createAccount(ethersSigner, await accountOwner.getAddress()))
+    accountOwner = createAccountOwner()
+    const {
+      proxy: account
+    } = await createAccount(ethersSigner, await accountOwner.getAddress())
     await fund(account)
 
     // sanity: validate helper functions
@@ -156,7 +155,7 @@ describe('EntryPoint', function () {
 
       it('should fail to transfer more than approved amount into EntryPoint', async () => {
         // Check transferring more than the amount fails
-        expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith('amount to deposit > allowance')
+        await expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith('amount to deposit > allowance')
       })
 
       it('should fail to withdraw larger amount than available', async () => {
@@ -302,7 +301,7 @@ describe('EntryPoint', function () {
       let address5: string
       before(async () => {
         address5 = await signer5.getAddress()
-        await account.addDeposit(ONE_ETH)
+        await account.deposit(ONE_ETH)
         expect(await getBalance(account.address)).to.equal(0)
         expect(await account.getDeposit()).to.eql(ONE_ETH)
       })
