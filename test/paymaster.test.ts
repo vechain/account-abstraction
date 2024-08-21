@@ -11,8 +11,7 @@ import {
   SimpleAccountFactory,
   SimpleAccountFactory__factory,
   TestCounter__factory,
-  TokenPaymaster,
-  ERC20__factory
+  TokenPaymaster
 } from '../typechain'
 import config from './config'
 import {
@@ -26,12 +25,6 @@ import {
   fund,
   getAccountAddress,
   getTokenBalance,
-  rethrow,
-  checkForGeth,
-  calcGasUsage,
-  //   deployEntryPoint,
-  checkForBannedOps,
-  createAddress,
   ONE_ETH,
   rethrow
 } from './testutils'
