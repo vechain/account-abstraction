@@ -77,7 +77,7 @@ describe.only('EntryPoint with paymaster', function () {
 
     before(async () => {
       const tokenPaymaster = await TokenPaymasterT.new(factory.address, 'ttt', entryPoint.address)
-      paymaster = await TokenPaymaster__factory.connect(tokenPaymaster.address, ethersSigner)
+      paymaster = TokenPaymaster__factory.connect(tokenPaymaster.address, ethersSigner)
       pmAddr = paymaster.address
       ownerAddr = await ethersSigner.getAddress()
     })
