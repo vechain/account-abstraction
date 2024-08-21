@@ -33,15 +33,30 @@ export async function createAccount (
     proxy: SimpleAccount
     accountFactory: SimpleAccountFactory
   }> {
-  const accountFactory = new SimpleAccountFactory__factory()
-    .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner)
+  const accountFactory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
   await accountFactory.createAccount(accountOwner, 0)
   const accountAddress = await accountFactory.getAddress(accountOwner, 0)
   const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
   return {
     accountFactory,
     proxy
+  }
+}
+
+export async function createAccountFromFactory (
+  accountFactory: SimpleAccountFactory,
+  ethersSigner: Signer,
+  accountOwner: string
+): Promise<{
+    account: SimpleAccount
+    accountFactory: SimpleAccountFactory
+  }> {
+  await accountFactory.createAccount(accountOwner, 0)
+  const accountAddress = await accountFactory.getAddress(accountOwner, 0)
+  const account = SimpleAccount__factory.connect(accountAddress, ethersSigner)
+  return {
+    account,
+    accountFactory
   }
 }
 
