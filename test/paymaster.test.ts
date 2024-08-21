@@ -1,39 +1,36 @@
-import { BigNumber, Wallet } from 'ethers'
-import { artifacts, ethers } from 'hardhat'
+import { hexValue } from '@ethersproject/bytes'
 import { expect } from 'chai'
+import { BigNumber, Wallet } from 'ethers'
+import { hexConcat, parseEther } from 'ethers/lib/utils'
+import { artifacts, ethers } from 'hardhat'
 import {
-  SimpleAccount,
   EntryPoint,
-  TokenPaymaster__factory,
-  TestCounter__factory,
+  EntryPoint__factory,
+  ERC20__factory,
+  SimpleAccount,
   SimpleAccountFactory,
   SimpleAccountFactory__factory,
-  EntryPoint__factory,
+  TestCounter__factory,
   TokenPaymaster,
-  ERC20__factory
+  TokenPaymaster__factory
 } from '../typechain'
+import config from './config'
 import {
   AddressZero,
-  createAccountOwner,
-  fund,
-  getBalance,
-  getTokenBalance,
-  rethrow,
-  checkForGeth,
   calcGasUsage,
-  //   deployEntryPoint,
-  checkForBannedOps,
-  createAddress,
-  ONE_ETH,
+  checkForGeth,
   createAccount,
+  createAccountOwner,
+  createAddress,
+  createRandomAccount,
+  fund,
   getAccountAddress,
-  createRandomAccount
+  getTokenBalance,
+  ONE_ETH,
+  rethrow
 } from './testutils'
 import { fillAndSign } from './UserOp'
-import { hexConcat, parseEther } from 'ethers/lib/utils'
 import { UserOperation } from './UserOperation'
-import { hexValue } from '@ethersproject/bytes'
-import config from './config'
 
 const TokenPaymasterT = artifacts.require('TokenPaymaster')
 const TestCounterT = artifacts.require('TestCounter')
