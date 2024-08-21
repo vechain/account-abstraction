@@ -65,7 +65,8 @@ describe('EntryPoint with paymaster', function () {
 
     accountOwner = createAccountOwner()
 
-    const { account } = await createAccountFromFactory(factory, ethersSigner, await accountOwner.getAddress())
+    const createdAccount = await createAccountFromFactory(factory, ethersSigner, await accountOwner.getAddress())
+    account = createdAccount.account
     await fund(account)
   })
 
