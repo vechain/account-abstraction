@@ -175,7 +175,7 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
   if (op1.maxFeePerGas == null) {
     if (provider == null) throw new Error('must have entryPoint to autofill maxFeePerGas')
     const block = await provider.getBlock('latest')
-    op1.maxFeePerGas = op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas;
+    op1.maxFeePerGas = op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas
   }
   // TODO: this is exactly what fillUserOp below should do - but it doesn't.
   // adding this manually
@@ -195,7 +195,7 @@ export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | 
   const provider = entryPoint?.provider
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
 
-  const chainId = await provider!.send('eth_chainId', []); //await provider!.getNetwork().then(net => net.chainId)
+  const chainId = await provider!.send('eth_chainId', []) // await provider!.getNetwork().then(net => net.chainId)
   const message = arrayify(getUserOpHash(op2, entryPoint!.address, chainId))
 
   return {
