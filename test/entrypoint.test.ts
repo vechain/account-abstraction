@@ -1,71 +1,61 @@
-import './aa.init'
 import { expect } from 'chai'
+import { toChecksumAddress } from 'ethereumjs-util'
+import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
+import { BytesLike, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
+import { artifacts, ethers } from 'hardhat'
 import {
   ERC20__factory,
   EntryPoint__factory,
-  MaliciousAccount__factory,
   SimpleAccount,
   SimpleAccountFactory,
   TestAggregatedAccount,
   TestAggregatedAccountFactory__factory,
   TestAggregatedAccount__factory,
   TestCounter,
+  TestCounter__factory,
   TestExpirePaymaster,
   TestExpirePaymaster__factory,
   TestExpiryAccount,
-  TestExpiryAccount__factory,
   TestPaymasterAcceptAll,
   TestPaymasterAcceptAll__factory,
   TestRevertAccount__factory,
   TestSignatureAggregator,
   TestSignatureAggregator__factory,
   TestWarmColdAccount__factory
-  ,
-  EntryPoint,
-  TokenPaymaster__factory,
-  TestCounter__factory,
-  SimpleAccountFactory__factory,
-  TokenPaymaster
 } from '../typechain'
-import {
-  fund,
-  createAccount,
-  createAccountOwner,
-  AddressZero,
-  createAddress,
-  createRandomAccount,
-  createRandomAccountOwner,
-  createRandomAddress,
-  fundVtho
-  ,
-  checkForGeth,
-  rethrow,
-  tostr,
-  getAccountInitCode,
-  calcGasUsage,
-  checkForBannedOps,
-  ONE_ETH,
-  TWO_ETH,
-  deployEntryPoint,
-  getBalance,
-  getAccountAddress,
-  HashZero,
-  simulationResultCatch,
-  getAggregatedAccountInitCode,
-  simulationResultWithAggregationCatch, decodeRevertReason
-} from './testutils'
-import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
-import { artifacts, ethers } from 'hardhat'
 import {
   DefaultsForUserOp,
   fillAndSign,
   getUserOpHash
 } from './UserOp'
-import config from './config'
-import { BytesLike, arrayify, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
 import { UserOperation } from './UserOperation'
 import { debugTransaction } from './_debugTx'
-import { toChecksumAddress } from 'ethereumjs-util'
+import './aa.init'
+import config from './config'
+import {
+  AddressZero,
+  HashZero,
+  ONE_ETH,
+  TWO_ETH,
+  checkForBannedOps,
+  createAccount,
+  createAccountOwner,
+  createAddress,
+  createRandomAccount,
+  createRandomAccountOwner,
+  createRandomAddress,
+  decodeRevertReason,
+  fund,
+  fundVtho,
+  getAccountAddress,
+  getAccountInitCode,
+  getAggregatedAccountInitCode,
+  getBalance,
+  simulationResultCatch,
+  simulationResultWithAggregationCatch,
+  tostr
+} from './testutils'
+import crypto from 'crypto'
 
 const TestCounterT = artifacts.require('TestCounter')
 const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator')
@@ -75,10 +65,21 @@ const TestPaymasterAcceptAllT = artifacts.require('TestPaymasterAcceptAll')
 const TestExpirePaymasterT = artifacts.require('TestExpirePaymaster')
 const TestRevertAccountT = artifacts.require('TestRevertAccount')
 const TestAggregatedAccountFactoryT = artifacts.require('TestAggregatedAccountFactory')
-const MaliciousAccountT = artifacts.require('MaliciousAccount')
 const TestWarmColdAccountT = artifacts.require('TestWarmColdAccount')
 const ONE_HUNDERD_VTHO = '100000000000000000000'
 const ONE_THOUSAND_VTHO = '1000000000000000000000'
+
+function getRandomInt (min: number, max: number): number {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  const range = max - min
+  if (range <= 0) {
+    throw new Error('Max must be greater than min')
+  }
+  const randomBytes = crypto.randomBytes(4)
+  const randomValue = randomBytes.readUInt32BE(0)
+  return min + (randomValue % range)
+}
 
 describe('EntryPoint', function () {
   let simpleAccountFactory: SimpleAccountFactory
@@ -1679,9 +1680,3 @@ describe('EntryPoint', function () {
     })
   })
 })
-
-function getRandomInt (min: any, max: any) {
-  min = Math.ceil(min)
-  max = Math.floor(max)
-  return Math.floor(Math.random() * (max - min) + min)
-}
