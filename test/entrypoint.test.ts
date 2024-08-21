@@ -124,8 +124,6 @@ describe('EntryPoint', function () {
         // Approve transfer from signer to Entrypoint and deposit
         await vtho.approve(config.entryPointAddress, DEPOSIT)
         address2 = await signer2.getAddress()
-        await vtho.approve(config.entryPointAddress, DEPOSIT)
-        address2 = await signer2.getAddress()
       })
 
       afterEach(async function () {
@@ -178,7 +176,6 @@ describe('EntryPoint', function () {
 
       it('should fail to withdraw larger amount than available', async () => {
         const addrTo = createAddress()
-        await expect(entryPoint.withdrawTo(addrTo, DEPOSIT)).to.revertedWith('Withdraw amount too large')
         await expect(entryPoint.withdrawTo(addrTo, DEPOSIT)).to.revertedWith('Withdraw amount too large')
       })
 
