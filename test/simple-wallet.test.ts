@@ -1,34 +1,30 @@
-import { BigNumber, Wallet } from 'ethers'
-import { ethers } from 'hardhat'
 import { expect } from 'chai'
+import { Wallet } from 'ethers'
+import { parseEther } from 'ethers/lib/utils'
+import { ethers } from 'hardhat'
 import {
-  ERC1967Proxy__factory,
   EntryPoint__factory,
   SimpleAccount,
-  EntryPoint,
   SimpleAccountFactory,
   SimpleAccountFactory__factory,
   SimpleAccount__factory,
   TestCounter,
   TestCounter__factory,
   TestUtil,
-  TestUtil__factory,
-  ERC20__factory
+  TestUtil__factory
 } from '../typechain'
+import config from './config'
 import {
-  createAccount,
-  createAddress,
-  createAccountOwner,
-  getBalance,
-  isDeployed,
-  ONE_ETH,
   HashZero,
-  fund
+  ONE_ETH,
+  createAccount,
+  createAccountOwner,
+  createAddress,
+  getBalance,
+  isDeployed
 } from './testutils'
 import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from './UserOp'
-import { parseEther } from 'ethers/lib/utils'
 import { UserOperation } from './UserOperation'
-import config from './config'
 // const EntryPoint = artifacts.require('EntryPoint');
 // const SimpleAccountFactory = artifacts.require('SimpleAccountFactory');
 const SimpleAccountT = artifacts.require('SimpleAccount')

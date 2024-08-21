@@ -3,6 +3,10 @@ import { toChecksumAddress } from 'ethereumjs-util'
 import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
 import { BytesLike, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
 import { artifacts, ethers } from 'hardhat'
+import { toChecksumAddress } from 'ethereumjs-util'
+import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
+import { BytesLike, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
+import { artifacts, ethers } from 'hardhat'
 import {
   ERC20__factory,
   EntryPoint__factory,
@@ -13,6 +17,7 @@ import {
   TestAggregatedAccount__factory,
   TestCounter,
   TestCounter__factory,
+  TestCounter__factory,
   TestExpirePaymaster,
   TestExpirePaymaster__factory,
   TestExpiryAccount,
@@ -22,8 +27,17 @@ import {
   TestSignatureAggregator,
   TestSignatureAggregator__factory,
   TestWarmColdAccount__factory
+  TestWarmColdAccount__factory
 } from '../typechain'
 import {
+  DefaultsForUserOp,
+  fillAndSign,
+  getUserOpHash
+} from './UserOp'
+import { UserOperation } from './UserOperation'
+import { debugTransaction } from './_debugTx'
+import './aa.init'
+import config from './config'
   DefaultsForUserOp,
   fillAndSign,
   getUserOpHash
@@ -38,6 +52,11 @@ import {
   ONE_ETH,
   TWO_ETH,
   checkForBannedOps,
+  AddressZero,
+  HashZero,
+  ONE_ETH,
+  TWO_ETH,
+  checkForBannedOps,
   createAccount,
   createAccountOwner,
   createAccountWithEntrypoint,
@@ -47,12 +66,18 @@ import {
   createRandomAddress,
   decodeRevertReason,
   fund,
+  decodeRevertReason,
+  fund,
   fundVtho,
+  getAccountAddress,
   getAccountAddress,
   getAccountInitCode,
   getAggregatedAccountInitCode,
+  getAggregatedAccountInitCode,
   getBalance,
   simulationResultCatch,
+  simulationResultWithAggregationCatch,
+  tostr
   simulationResultWithAggregationCatch,
   tostr
 } from './testutils'
@@ -64,10 +89,25 @@ const TestExpiryAccountT = artifacts.require('TestExpiryAccount')
 const TestPaymasterAcceptAllT = artifacts.require('TestPaymasterAcceptAll')
 const TestExpirePaymasterT = artifacts.require('TestExpirePaymaster')
 const TestRevertAccountT = artifacts.require('TestRevertAccount')
+const TestPaymasterAcceptAllT = artifacts.require('TestPaymasterAcceptAll')
+const TestExpirePaymasterT = artifacts.require('TestExpirePaymaster')
+const TestRevertAccountT = artifacts.require('TestRevertAccount')
 const TestAggregatedAccountFactoryT = artifacts.require('TestAggregatedAccountFactory')
 const TestWarmColdAccountT = artifacts.require('TestWarmColdAccount')
 const ONE_HUNDERD_VTHO = '100000000000000000000'
 const ONE_THOUSAND_VTHO = '1000000000000000000000'
+
+function getRandomInt (min: number, max: number): number {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  const range = max - min
+  if (range <= 0) {
+    throw new Error('Max must be greater than min')
+  }
+  const randomBytes = crypto.randomBytes(4)
+  const randomValue = randomBytes.readUInt32BE(0)
+  return min + (randomValue % range)
+}
 
 describe('EntryPoint', function () {
   let simpleAccountFactory: SimpleAccountFactory
@@ -99,16 +139,19 @@ describe('EntryPoint', function () {
     expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(actualOpHash)
   })
 
-  describe.only('Stake Management', () => {
+  describe('Stake Management', () => {
     describe('with deposit', () => {
       let address2: string
       const signer2 = ethers.provider.getSigner(2)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
       const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
       const DEPOSIT = 1000
+      const DEPOSIT = 1000
 
       beforeEach(async function () {
         // Approve transfer from signer to Entrypoint and deposit
+        await vtho.approve(config.entryPointAddress, DEPOSIT)
+        address2 = await signer2.getAddress()
         await vtho.approve(config.entryPointAddress, DEPOSIT)
         address2 = await signer2.getAddress()
       })
@@ -157,12 +200,14 @@ describe('EntryPoint', function () {
       })
 
       it('should fail to transfer more than approved amount into EntryPoint', async () => {
+      it('should fail to transfer more than approved amount into EntryPoint', async () => {
         // Check transferring more than the amount fails
         await expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith('amount to deposit > allowance')
       })
 
       it('should fail to withdraw larger amount than available', async () => {
         const addrTo = createAddress()
+        await expect(entryPoint.withdrawTo(addrTo, DEPOSIT)).to.revertedWith('Withdraw amount too large')
         await expect(entryPoint.withdrawTo(addrTo, DEPOSIT)).to.revertedWith('Withdraw amount too large')
       })
 
@@ -301,6 +346,7 @@ describe('EntryPoint', function () {
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer5)
       const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer5)
       let account: SimpleAccount
+      let address5: string
       let address5: string
       before(async () => {
         address5 = await signer5.getAddress()
@@ -1669,9 +1715,3 @@ describe('EntryPoint', function () {
     })
   })
 })
-
-function getRandomInt (min: any, max: any) {
-  min = Math.ceil(min)
-  max = Math.floor(max)
-  return Math.floor(Math.random() * (max - min) + min)
-}
