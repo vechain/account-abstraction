@@ -17,11 +17,10 @@ import {
   AddressZero,
   calcGasUsage,
   checkForGeth,
-  createAccount,
   createAccountFromFactory,
   createAccountOwner,
   createAddress,
-  createRandomAccount,
+  createRandomAccountFromFactory,
   fund,
   getAccountAddress,
   getTokenBalance,
@@ -203,7 +202,7 @@ describe('EntryPoint with paymaster', function () {
 
         const beneficiaryAddress = createAddress()
         const testCounterContract = await TestCounterT.new()
-        const testCounter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
+        const testCounter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const justEmit = testCounter.interface.encodeFunctionData('justemit')
         const execFromSingleton = account.interface.encodeFunctionData('execute', [testCounter.address, 0, justEmit])
 
@@ -211,7 +210,7 @@ describe('EntryPoint with paymaster', function () {
         const accounts: SimpleAccount[] = []
 
         for (let i = 0; i < 4; i++) {
-          const { proxy: aAccount } = await createRandomAccount(ethersSigner, await accountOwner.getAddress())
+          const { account: aAccount } = await createRandomAccountFromFactory(factory, ethersSigner, await accountOwner.getAddress())
 
           // Fund account through EntryPoint
           const vtho = ERC20__factory.connect(config.VTHOAddress, ethers.provider.getSigner())
@@ -255,8 +254,8 @@ describe('EntryPoint with paymaster', function () {
         let approveCallData: string
 
         before(async function () {
-          this.timeout(200000);
-          ({ proxy: account2 } = await createAccount(ethersSigner, await accountOwner.getAddress()))
+          this.timeout(200000)
+          const { account: account2 } = await createAccountFromFactory(factory, ethersSigner, await accountOwner.getAddress())
           await paymaster.mintTokens(account2.address, parseEther('1'))
           await paymaster.mintTokens(account.address, parseEther('1'))
           approveCallData = paymaster.interface.encodeFunctionData('approve', [account.address, ethers.constants.MaxUint256])

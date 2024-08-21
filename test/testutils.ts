@@ -46,18 +46,31 @@ export async function createAccount (
 export async function createAccountFromFactory (
   accountFactory: SimpleAccountFactory,
   ethersSigner: Signer,
-  accountOwner: string
+  accountOwner: string,
+  salt = 0
 ): Promise<{
     account: SimpleAccount
     accountFactory: SimpleAccountFactory
   }> {
-  await accountFactory.createAccount(accountOwner, 0)
-  const accountAddress = await accountFactory.getAddress(accountOwner, 0)
+  await accountFactory.createAccount(accountOwner, salt)
+  const accountAddress = await accountFactory.getAddress(accountOwner, salt)
   const account = SimpleAccount__factory.connect(accountAddress, ethersSigner)
   return {
     account,
     accountFactory
   }
+}
+
+export async function createRandomAccountFromFactory (
+  accountFactory: SimpleAccountFactory,
+  ethersSigner: Signer,
+  accountOwner: string
+): Promise<{
+    account: SimpleAccount
+    accountFactory: SimpleAccountFactory
+  }> {
+  const salt = seed++
+  return createAccountFromFactory(accountFactory, ethersSigner, accountOwner, salt)
 }
 
 export const AddressZero = ethers.constants.AddressZero
