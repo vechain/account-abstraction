@@ -56,10 +56,8 @@ describe('EntryPoint with paymaster', function () {
     await checkForGeth()
 
     // Requires pre-deployment of entryPoint and Factory
-    entryPoint = await EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
-    factory = await SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
-    entryPoint = await EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
-    factory = await SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
+    entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
+    factory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
 
     accountOwner = createAccountOwner();
     ({ proxy: account } = await createAccount(ethersSigner, await accountOwner.getAddress()))

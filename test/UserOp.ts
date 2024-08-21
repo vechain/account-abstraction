@@ -1,18 +1,17 @@
+import { ecsign, keccak256 as keccak256_buffer, toRpcSig } from 'ethereumjs-util'
+import { BigNumber, Contract, Signer, Wallet } from 'ethers'
 import {
   arrayify,
   defaultAbiCoder,
   hexDataSlice,
   keccak256
 } from 'ethers/lib/utils'
-import { BigNumber, Contract, Signer, Wallet } from 'ethers'
-import { AddressZero, callDataCost, rethrow } from './testutils'
-import { ecsign, toRpcSig, keccak256 as keccak256_buffer } from 'ethereumjs-util'
+import { Create2Factory } from '../src/Create2Factory'
 import {
   EntryPoint
 } from '../typechain'
+import { AddressZero, callDataCost, rethrow } from './testutils'
 import { UserOperation } from './UserOperation'
-import { Create2Factory } from '../src/Create2Factory'
-import { ethers } from 'hardhat'
 
 export function packUserOp (op: UserOperation, forSignature = true): string {
   if (forSignature) {
@@ -149,7 +148,6 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
       if (provider == null) throw new Error('no entrypoint/provider')
       const initEstimate = await provider.estimateGas({
         from: entryPoint?.address,
-        to: initAddr,
         data: initCallData,
         gasLimit: 10e6
       })
