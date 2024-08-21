@@ -34,9 +34,9 @@ import { UserOperation } from './UserOperation'
 const TokenPaymasterT = artifacts.require('TokenPaymaster')
 const TestCounterT = artifacts.require('TestCounter')
 
-const ONE_HUNDERD_VTHO = '100000000000000000000'
+const ONE_HUNDRED_VTHO = '100000000000000000000'
 
-describe.only('EntryPoint with paymaster', function () {
+describe('EntryPoint with paymaster', function () {
   let entryPoint: EntryPoint
   let accountOwner: Wallet
   const ethersSigner = ethers.provider.getSigner()
@@ -69,7 +69,7 @@ describe.only('EntryPoint with paymaster', function () {
     await fund(account)
   })
 
-  describe('TokenPaymaster', () => {
+  describe('#TokenPaymaster', () => {
     let paymaster: TokenPaymaster
     const otherAddr = createAddress()
     let ownerAddr: string
@@ -99,14 +99,13 @@ describe.only('EntryPoint with paymaster', function () {
     before(async () => {
       const tokenPaymaster = await TokenPaymasterT.new(factory.address, 'tst', entryPoint.address)
       paymaster = TokenPaymaster__factory.connect(tokenPaymaster.address, ethersSigner)
-      //   await entryPoint.depositAmountTo(paymaster.address, BigNumber.from(ONE_HUNDERD_VTHO) )
 
       const vtho = ERC20__factory.connect(config.VTHOAddress, ethers.provider.getSigner())
-      await vtho.approve(config.entryPointAddress, BigNumber.from(ONE_HUNDERD_VTHO))
-      await entryPoint.depositAmountTo(paymaster.address, BigNumber.from(ONE_HUNDERD_VTHO))
+      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
+      await entryPoint.depositAmountTo(paymaster.address, BigNumber.from(ONE_HUNDRED_VTHO))
 
-      await vtho.approve(paymaster.address, BigNumber.from(ONE_HUNDERD_VTHO))
-      await paymaster.addStake(1, BigNumber.from(ONE_HUNDERD_VTHO))
+      await vtho.approve(paymaster.address, BigNumber.from(ONE_HUNDRED_VTHO))
+      await paymaster.addStake(1, BigNumber.from(ONE_HUNDRED_VTHO))
     })
 
     describe('#handleOps', () => {
@@ -215,8 +214,8 @@ describe.only('EntryPoint with paymaster', function () {
 
           // Fund account through EntryPoint
           const vtho = ERC20__factory.connect(config.VTHOAddress, ethers.provider.getSigner())
-          await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
-          await entryPoint.depositAmountTo(aAccount.address, BigNumber.from(ONE_HUNDERD_VTHO))
+          await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
+          await entryPoint.depositAmountTo(aAccount.address, BigNumber.from(ONE_HUNDRED_VTHO))
 
           await fund(aAccount)
 
@@ -264,8 +263,8 @@ describe.only('EntryPoint with paymaster', function () {
 
           // Fund account through EntryPoint
           const vtho = ERC20__factory.connect(config.VTHOAddress, ethers.provider.getSigner())
-          await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
-          await entryPoint.depositAmountTo(account2.address, BigNumber.from(ONE_HUNDERD_VTHO))
+          await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
+          await entryPoint.depositAmountTo(account2.address, BigNumber.from(ONE_HUNDRED_VTHO))
 
           const approveOp = await fillAndSign({
             sender: account2.address,
