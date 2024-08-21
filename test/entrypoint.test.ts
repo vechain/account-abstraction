@@ -1,86 +1,85 @@
-import './aa.init'
 import { expect } from 'chai'
+import { toChecksumAddress } from 'ethereumjs-util'
+import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
+import { BytesLike, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
+import { artifacts, ethers } from 'hardhat'
 import {
   ERC20__factory,
   EntryPoint__factory,
-  MaliciousAccount__factory,
   SimpleAccount,
   SimpleAccountFactory,
   TestAggregatedAccount,
   TestAggregatedAccountFactory__factory,
   TestAggregatedAccount__factory,
   TestCounter,
+  TestCounter__factory,
   TestExpirePaymaster,
   TestExpirePaymaster__factory,
   TestExpiryAccount,
-  TestExpiryAccount__factory,
   TestPaymasterAcceptAll,
   TestPaymasterAcceptAll__factory,
   TestRevertAccount__factory,
   TestSignatureAggregator,
   TestSignatureAggregator__factory,
-  TestWarmColdAccount__factory,
+  TestWarmColdAccount__factory
 } from '../typechain'
-import {
-  EntryPoint,
-  TokenPaymaster__factory,
-  TestCounter__factory,
-  SimpleAccountFactory__factory,
-  TokenPaymaster,
-} from '../typechain'
-import {
-  fund,
-  createAccount,
-  createAccountOwner,
-  AddressZero,
-  createAddress,
-  createRandomAccount,
-  createRandomAccountOwner,
-  createRandomAddress,
-  fundVtho,
-} from './testutils'
-import {
-  checkForGeth,
-  rethrow,
-  tostr,
-  getAccountInitCode,
-  calcGasUsage,
-  checkForBannedOps,
-  ONE_ETH,
-  TWO_ETH,
-  deployEntryPoint,
-  getBalance,
-  getAccountAddress,
-  HashZero,
-  simulationResultCatch,
-  getAggregatedAccountInitCode,
-  simulationResultWithAggregationCatch, decodeRevertReason
-} from './testutils'
-import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
-import { artifacts, ethers } from 'hardhat'
 import {
   DefaultsForUserOp,
   fillAndSign,
   getUserOpHash
 } from './UserOp'
-import config from './config'
-import { BytesLike, arrayify, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
 import { UserOperation } from './UserOperation'
 import { debugTransaction } from './_debugTx'
-import { toChecksumAddress } from 'ethereumjs-util'
+import './aa.init'
+import config from './config'
+import {
+  AddressZero,
+  HashZero,
+  ONE_ETH,
+  TWO_ETH,
+  checkForBannedOps,
+  createAccount,
+  createAccountOwner,
+  createAddress,
+  createRandomAccount,
+  createRandomAccountOwner,
+  createRandomAddress,
+  decodeRevertReason,
+  fund,
+  fundVtho,
+  getAccountAddress,
+  getAccountInitCode,
+  getAggregatedAccountInitCode,
+  getBalance,
+  simulationResultCatch,
+  simulationResultWithAggregationCatch,
+  tostr
+} from './testutils'
+import crypto from 'crypto'
 
-const TestCounterT = artifacts.require('TestCounter');
-const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator');
-const TestAggregatedAccountT = artifacts.require('TestAggregatedAccount');
+const TestCounterT = artifacts.require('TestCounter')
+const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator')
+const TestAggregatedAccountT = artifacts.require('TestAggregatedAccount')
 const TestExpiryAccountT = artifacts.require('TestExpiryAccount')
-const TestPaymasterAcceptAllT = artifacts.require('TestPaymasterAcceptAll');
-const TestExpirePaymasterT = artifacts.require('TestExpirePaymaster');
-const TestRevertAccountT = artifacts.require('TestRevertAccount');
+const TestPaymasterAcceptAllT = artifacts.require('TestPaymasterAcceptAll')
+const TestExpirePaymasterT = artifacts.require('TestExpirePaymaster')
+const TestRevertAccountT = artifacts.require('TestRevertAccount')
 const TestAggregatedAccountFactoryT = artifacts.require('TestAggregatedAccountFactory')
-const MaliciousAccountT = artifacts.require('MaliciousAccount')
-const TestWarmColdAccountT = artifacts.require('TestWarmColdAccount');
-const ONE_HUNDERD_VTHO = "100000000000000000000"
-const ONE_THOUSAND_VTHO = "1000000000000000000000"
+const TestWarmColdAccountT = artifacts.require('TestWarmColdAccount')
+const ONE_HUNDERD_VTHO = '100000000000000000000'
+const ONE_THOUSAND_VTHO = '1000000000000000000000'
+
+function getRandomInt (min: number, max: number): number {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  const range = max - min
+  if (range <= 0) {
+    throw new Error('Max must be greater than min')
+  }
+  const randomBytes = crypto.randomBytes(4)
+  const randomValue = randomBytes.readUInt32BE(0)
+  return min + (randomValue % range)
+}
 
 describe('EntryPoint', function () {
   let simpleAccountFactory: SimpleAccountFactory
@@ -93,8 +92,8 @@ describe('EntryPoint', function () {
   const paymasterStake = ethers.utils.parseEther('2')
 
   before(async function () {
-    const chainId = await ethers.provider.send('eth_chainId', []); //await ethers.provider.getNetwork().then(net => net.chainId);
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner());
+    const chainId = await ethers.provider.send('eth_chainId', []) // await ethers.provider.getNetwork().then(net => net.chainId);
+    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
 
     accountOwner = createAccountOwner();
     ({
@@ -112,28 +111,28 @@ describe('EntryPoint', function () {
   })
 
   describe('Stake Management', () => {
-    describe("with deposit", () => {
-      let address2: string;
+    describe('with deposit', () => {
+      let address2: string
       const signer2 = ethers.provider.getSigner(2)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
       const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
-      const DEPOSIT = 1000;
+      const DEPOSIT = 1000
 
       beforeEach(async function () {
         // Approve transfer from signer to Entrypoint and deposit
-        await vtho.approve(config.entryPointAddress, DEPOSIT);
-        address2 = await signer2.getAddress();
+        await vtho.approve(config.entryPointAddress, DEPOSIT)
+        address2 = await signer2.getAddress()
       })
 
       afterEach(async function () {
         // Reset state by withdrawing deposit
-        const balance = await entryPoint.balanceOf(address2);
-        await entryPoint.withdrawTo(address2, balance);
+        const balance = await entryPoint.balanceOf(address2)
+        await entryPoint.withdrawTo(address2, balance)
       })
 
-      it("should transfer full approved amount into EntryPoint", async () => {
+      it('should transfer full approved amount into EntryPoint', async () => {
         // Transfer approved amount to entrpoint
-        await entryPoint.depositTo(address2);
+        await entryPoint.depositTo(address2)
 
         // Check amount has been deposited
         expect(await entryPoint.balanceOf(address2)).to.eql(DEPOSIT)
@@ -146,13 +145,13 @@ describe('EntryPoint', function () {
         })
 
         // Check updated allowance
-        expect(await vtho.allowance(address2, config.entryPointAddress)).to.eql(0);
+        expect(await vtho.allowance(address2, config.entryPointAddress)).to.eql(0)
       })
 
-      it("should transfer partial approved amount into EntryPoint", async () => {
+      it('should transfer partial approved amount into EntryPoint', async () => {
         // Transfer partial amount to entrpoint
-        const ONE = 1;
-        await entryPoint.depositAmountTo(address2, DEPOSIT - ONE);
+        const ONE = 1
+        await entryPoint.depositAmountTo(address2, DEPOSIT - ONE)
 
         // Check amount has been deposited
         expect(await entryPoint.balanceOf(address2)).to.eql(DEPOSIT - ONE)
@@ -165,17 +164,17 @@ describe('EntryPoint', function () {
         })
 
         // Check updated allowance
-        expect(await vtho.allowance(address2, config.entryPointAddress)).to.eql(ONE);
+        expect(await vtho.allowance(address2, config.entryPointAddress)).to.eql(ONE)
       })
 
-      it("should fail to transfer more than approved amount into EntryPoint", async () => {
+      it('should fail to transfer more than approved amount into EntryPoint', async () => {
         // Check transferring more than the amount fails
-        expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith("amount to deposit > allowance")
+        expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith('amount to deposit > allowance')
       })
 
       it('should fail to withdraw larger amount than available', async () => {
         const addrTo = createAddress()
-        await expect(entryPoint.withdrawTo(addrTo, DEPOSIT)).to.revertedWith("Withdraw amount too large");
+        await expect(entryPoint.withdrawTo(addrTo, DEPOSIT)).to.revertedWith('Withdraw amount too large')
       })
 
       it('should withdraw amount', async () => {
@@ -193,30 +192,30 @@ describe('EntryPoint', function () {
       const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer3)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer3)
       it('should fail to stake without approved amount', async () => {
-        await vtho.approve(config.entryPointAddress, 0);
-        await expect(entryPoint.addStake(0)).to.revertedWith("amount to stake == 0")
+        await vtho.approve(config.entryPointAddress, 0)
+        await expect(entryPoint.addStake(0)).to.revertedWith('amount to stake == 0')
       })
       it('should fail to stake more than approved amount', async () => {
-        await vtho.approve(config.entryPointAddress, 100);
-        await expect(entryPoint.addStakeAmount(0, 101)).to.revertedWith("amount to stake > allowance")
+        await vtho.approve(config.entryPointAddress, 100)
+        await expect(entryPoint.addStakeAmount(0, 101)).to.revertedWith('amount to stake > allowance')
       })
       it('should fail to stake without delay', async () => {
-        await vtho.approve(config.entryPointAddress, 100);
+        await vtho.approve(config.entryPointAddress, 100)
         await expect(entryPoint.addStake(0)).to.revertedWith('must specify unstake delay')
         await expect(entryPoint.addStakeAmount(0, 100)).to.revertedWith('must specify unstake delay')
       })
       it('should fail to unlock', async () => {
         await expect(entryPoint.unlockStake()).to.revertedWith('not staked')
       })
-    });
+    })
 
     describe('with stake', () => {
-      const UNSTAKE_DELAY_SEC = 60;
-      var address4: string;
+      const UNSTAKE_DELAY_SEC = 60
+      let address4: string
       const signer4 = ethers.provider.getSigner(4)
       const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer4)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer4)
-    
+
       before(async () => {
         address4 = await signer4.getAddress()
         await vtho.approve(config.entryPointAddress, 2000)
@@ -224,7 +223,7 @@ describe('EntryPoint', function () {
       })
       it('should report "staked" state', async () => {
         const { stake, staked, unstakeDelaySec, withdrawTime } = await entryPoint.getDepositInfo(address4)
-        expect({staked, unstakeDelaySec, withdrawTime }).to.eql({
+        expect({ staked, unstakeDelaySec, withdrawTime }).to.eql({
           staked: true,
           unstakeDelaySec: UNSTAKE_DELAY_SEC,
           withdrawTime: 0
@@ -234,7 +233,7 @@ describe('EntryPoint', function () {
 
       it('should succeed to stake again', async () => {
         const { stake } = await entryPoint.getDepositInfo(address4)
-        await vtho.approve(config.entryPointAddress, 1000);
+        await vtho.approve(config.entryPointAddress, 1000)
         await entryPoint.addStake(UNSTAKE_DELAY_SEC)
         const { stake: stakeAfter } = await entryPoint.getDepositInfo(address4)
         expect(stakeAfter).to.eq(stake.add(1000))
@@ -243,9 +242,9 @@ describe('EntryPoint', function () {
         await expect(entryPoint.withdrawStake(AddressZero)).to.revertedWith('must call unlockStake() first')
       })
       describe('with unlocked stake', () => {
-        var withdrawTime1: number
+        let withdrawTime1: number
         before(async () => {
-          let transaction = await entryPoint.unlockStake();
+          const transaction = await entryPoint.unlockStake()
           withdrawTime1 = await ethers.provider.getBlock(transaction.blockHash!).then(block => block.timestamp) + UNSTAKE_DELAY_SEC
         })
         it('should report as "not staked"', async () => {
@@ -253,14 +252,13 @@ describe('EntryPoint', function () {
         })
         it('should report unstake state', async () => {
           const { stake, staked, unstakeDelaySec, withdrawTime } = await entryPoint.getDepositInfo(address4)
-          expect({staked, unstakeDelaySec, withdrawTime }).to.eql({
+          expect({ staked, unstakeDelaySec, withdrawTime }).to.eql({
             staked: false,
             unstakeDelaySec: UNSTAKE_DELAY_SEC,
             withdrawTime: withdrawTime1
           })
 
           expect(stake.toNumber()).to.greaterThanOrEqual(3000)
-
         })
         it('should fail to withdraw before unlock timeout', async () => {
           await expect(entryPoint.withdrawStake(AddressZero)).to.revertedWith('Stake withdrawal is not due')
@@ -271,29 +269,28 @@ describe('EntryPoint', function () {
         describe('after unstake delay', () => {
           before(async () => {
             // wait 61 seconds
-            await new Promise(r => setTimeout(r, 60000));
+            await new Promise(r => setTimeout(r, 60000))
           })
           it('should fail to unlock again', async () => {
             await expect(entryPoint.unlockStake()).to.revertedWith('already unstaking')
           })
           it('adding stake should reset "unlockStake"', async () => {
-            await vtho.approve(config.entryPointAddress, 1000);
+            await vtho.approve(config.entryPointAddress, 1000)
             await entryPoint.addStake(UNSTAKE_DELAY_SEC)
             const { stake, staked, unstakeDelaySec, withdrawTime } = await entryPoint.getDepositInfo(address4)
-            expect({staked, unstakeDelaySec, withdrawTime }).to.eql({
+            expect({ staked, unstakeDelaySec, withdrawTime }).to.eql({
               staked: true,
               unstakeDelaySec: UNSTAKE_DELAY_SEC,
               withdrawTime: 0
             })
 
-            expect(stake.toNumber()).to.greaterThanOrEqual(4000);
-
+            expect(stake.toNumber()).to.greaterThanOrEqual(4000)
           })
           it('should succeed to withdraw', async () => {
-            await entryPoint.unlockStake().catch(e => console.log(e.message));
+            await entryPoint.unlockStake().catch(e => console.log(e.message))
 
             // wait 65 seconds
-            await new Promise(r => setTimeout(r, 120000));
+            await new Promise(r => setTimeout(r, 120000))
 
             const { stake } = await entryPoint.getDepositInfo(address4)
             const addr1 = createRandomAddress()
@@ -315,38 +312,37 @@ describe('EntryPoint', function () {
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer5)
       const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer5)
       let account: SimpleAccount
-      let address5: string;
+      let address5: string
       before(async () => {
-        address5 = await signer5.getAddress();
+        address5 = await signer5.getAddress()
         await account.addDeposit(ONE_ETH)
         expect(await getBalance(account.address)).to.equal(0)
         expect(await account.getDeposit()).to.eql(ONE_ETH)
       })
-      
     })
   })
 
   describe('#simulateValidation', () => {
     const accountOwner1 = createAccountOwner()
     let account1: SimpleAccount
-    let address2: string;
+    let address2: string
     const signer2 = ethers.provider.getSigner(2)
     const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
     const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
-    const DEPOSIT = 1000;
+    const DEPOSIT = 1000
 
     before(async () => {
       ({ proxy: account1 } = await createAccount(ethersSigner, await accountOwner1.getAddress()))
 
       await fund(account1)
 
-      // Fund account 
-      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-      await entryPoint.depositAmountTo(account.address, BigNumber.from(ONE_HUNDERD_VTHO));
+      // Fund account
+      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+      await entryPoint.depositAmountTo(account.address, BigNumber.from(ONE_HUNDERD_VTHO))
 
       // Fund account1
-      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-      await entryPoint.depositAmountTo(account1.address, BigNumber.from(ONE_HUNDERD_VTHO));
+      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+      await entryPoint.depositAmountTo(account1.address, BigNumber.from(ONE_HUNDERD_VTHO))
     })
 
     it('should fail if validateUserOp fails', async () => {
@@ -397,12 +393,12 @@ describe('EntryPoint', function () {
       const stakeValue = BigNumber.from(456)
       const unstakeDelay = 3
 
-      let accountOwner = createRandomAccountOwner();
+      const accountOwner = createRandomAccountOwner()
       const { proxy: account2 } = await createRandomAccount(ethersSigner, accountOwner.address)
-      
+
       await fund(account2)
       await fundVtho(account2.address)
-      await vtho.transfer(account2.address, ONE_HUNDERD_VTHO);
+      await vtho.transfer(account2.address, ONE_HUNDERD_VTHO)
 
       // allow vtho from account to entrypoint
       const callData0 = account.interface.encodeFunctionData('execute', [vtho.address, 0, vtho.interface.encodeFunctionData('approve', [entryPoint.address, stakeValue])])
@@ -410,13 +406,13 @@ describe('EntryPoint', function () {
       const vthoOp = await fillAndSign({
         sender: account2.address,
         callData: callData0,
-        callGasLimit: BigNumber.from(123456),
+        callGasLimit: BigNumber.from(123456)
       }, accountOwner, entryPoint)
-      
-      let beneficiary = createRandomAddress();
+
+      const beneficiary = createRandomAddress()
 
       // Aprove some VTHO to entrypoint
-      await entryPoint.handleOps([vthoOp], beneficiary, {gasLimit: 1e7})
+      await entryPoint.handleOps([vthoOp], beneficiary, { gasLimit: 1e7 })
 
       // Call execute on account via userOp instead of directly
       const callData = account.interface.encodeFunctionData('execute', [entryPoint.address, 0, entryPoint.interface.encodeFunctionData('addStake', [unstakeDelay])])
@@ -424,11 +420,11 @@ describe('EntryPoint', function () {
         sender: account2.address,
         callData,
         callGasLimit: BigNumber.from(1234567),
-        verificationGasLimit: BigNumber.from(1234567),
+        verificationGasLimit: BigNumber.from(1234567)
       }, accountOwner, entryPoint)
 
       // call entryPoint.addStake from account
-      let ret = await entryPoint.handleOps([opp], createRandomAddress(), {gasLimit: 1e7})
+      const ret = await entryPoint.handleOps([opp], createRandomAddress(), { gasLimit: 1e7 })
 
       // reverts, not from owner
       // let ret = await account2.execute(entryPoint.address, stakeValue, entryPoint.interface.encodeFunctionData('addStake', [unstakeDelay]), {gasLimit: 1e7})
@@ -486,8 +482,8 @@ describe('EntryPoint', function () {
       const sender = await getAccountAddress(accountOwner1.address, simpleAccountFactory)
 
       // Fund sender
-      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-      await entryPoint.depositAmountTo(sender, BigNumber.from(ONE_HUNDERD_VTHO));
+      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+      await entryPoint.depositAmountTo(sender, BigNumber.from(ONE_HUNDERD_VTHO))
 
       const op1 = await fillAndSign({
         sender,
@@ -531,16 +527,16 @@ describe('EntryPoint', function () {
   })
 
   describe('#simulateHandleOp', () => {
-    let address2: string;
+    let address2: string
     const signer2 = ethers.provider.getSigner(2)
     const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
-    
+
     it('should simulate execution', async () => {
       const accountOwner1 = createAccountOwner()
       const { proxy: account } = await createAccount(ethersSigner, await accountOwner.getAddress())
       await fund(account)
-      let testCounterContract = await TestCounterT.new();
-      const counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner);
+      const testCounterContract = await TestCounterT.new()
+      const counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
 
       const count = counter.interface.encodeFunctionData('count')
       const callData = account.interface.encodeFunctionData('execute', [counter.address, 0, count])
@@ -565,7 +561,6 @@ describe('EntryPoint', function () {
   })
 
   describe('flickering account validation', () => {
-
     const signer2 = ethers.provider.getSigner(2)
     const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
 
@@ -601,7 +596,7 @@ describe('EntryPoint', function () {
     //     paymasterAndData: '0x'
     //   }
     //   try {
-    //     // Why should this revert? 
+    //     // Why should this revert?
     //     // This doesn't revert but we need it to
     //     await expect(entryPoint.simulateValidation(userOp, { gasLimit: 1e6 }))
     //       .to.revertedWith('ValidationResult')
@@ -621,7 +616,7 @@ describe('EntryPoint', function () {
       const revertLength = 1e5
       const REVERT_REASON_MAX_LEN = 2048
       const testRevertAccountContract = await TestRevertAccountT.new(entryPoint.address, { value: parseEther('1') })
-      const testRevertAccount = TestRevertAccount__factory.connect(testRevertAccountContract.address, ethersSigner);
+      const testRevertAccount = TestRevertAccount__factory.connect(testRevertAccountContract.address, ethersSigner)
       const badData = await testRevertAccount.populateTransaction.revertLong(revertLength + 1)
       const badOp: UserOperation = {
         ...DefaultsForUserOp,
@@ -632,8 +627,8 @@ describe('EntryPoint', function () {
         verificationGasLimit: 1e6,
         callData: badData.data!
       }
-      
-      await vtho.approve(testRevertAccount.address, ONE_HUNDERD_VTHO);
+
+      await vtho.approve(testRevertAccount.address, ONE_HUNDERD_VTHO)
       const beneficiaryAddress = createRandomAddress()
 
       await expect(entryPoint.callStatic.simulateValidation(badOp, { gasLimit: 1e7 })).to.revertedWith('ValidationResult')
@@ -645,7 +640,6 @@ describe('EntryPoint', function () {
       // expect(revertReason.length).to.equal(REVERT_REASON_MAX_LEN)
     })
 
-    
     describe('warm/cold storage detection in simulation vs execution', () => {
       const TOUCH_GET_AGGREGATOR = 1
       const TOUCH_PAYMASTER = 2
@@ -653,8 +647,8 @@ describe('EntryPoint', function () {
       it('should prevent detection through getAggregator()', async () => {
         // const testWarmColdAccountContract = await new TestWarmColdAccount__factory(ethersSigner).deploy(entryPoint.address,
         //   { value: parseEther('1') })
-          const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address,{ value: parseEther('1') })
-        const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner);
+        const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address, { value: parseEther('1') })
+        const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner)
         const badOp: UserOperation = {
           ...DefaultsForUserOp,
           nonce: TOUCH_GET_AGGREGATOR,
@@ -674,16 +668,16 @@ describe('EntryPoint', function () {
       })
 
       it('should prevent detection through paymaster.code.length', async () => {
-        const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address,{ value: parseEther('1') })
-        const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner);
-        
-        await fundVtho(testWarmColdAccountContract.address);
+        const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address, { value: parseEther('1') })
+        const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner)
 
-        let paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
-        const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner);
+        await fundVtho(testWarmColdAccountContract.address)
+
+        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
 
         await fundVtho(paymaster.address)
-        await paymaster.deposit(ONE_ETH, {gasLimit: 1e7})
+        await paymaster.deposit(ONE_ETH, { gasLimit: 1e7 })
 
         const badOp: UserOperation = {
           ...DefaultsForUserOp,
@@ -707,7 +701,6 @@ describe('EntryPoint', function () {
   })
 
   describe('2d nonces', () => {
-
     const signer2 = ethers.provider.getSigner(2)
     const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
 
@@ -733,14 +726,13 @@ describe('EntryPoint', function () {
 
     describe('with key=1, seq=1', () => {
       before(async () => {
-        
-        await fundVtho(sender);
+        await fundVtho(sender)
 
         const op = await fillAndSign({
           sender,
           nonce: keyShifted
         }, accountOwner, entryPoint)
-        let ret = await entryPoint.handleOps([op], beneficiaryAddress, {gasLimit: 1e7})
+        const ret = await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 })
       })
 
       it('should get next nonce value by getNonce', async () => {
@@ -756,8 +748,7 @@ describe('EntryPoint', function () {
       })
 
       it('should allow manual nonce increment', async () => {
-
-        await fundVtho(sender);
+        await fundVtho(sender)
 
         // must be called from account itself
         const incNonceKey = 5
@@ -768,7 +759,7 @@ describe('EntryPoint', function () {
           callData,
           nonce: await entryPoint.getNonce(sender, key)
         }, accountOwner, entryPoint)
-        await entryPoint.handleOps([op], beneficiaryAddress, {gasLimit: 1e7})
+        await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 })
 
         expect(await entryPoint.getNonce(sender, incNonceKey)).to.equal(BigNumber.from(incNonceKey).shl(64).add(1))
       })
@@ -790,8 +781,8 @@ describe('EntryPoint', function () {
       let counter: TestCounter
       let accountExecFromEntryPoint: PopulatedTransaction
       before(async () => {
-        let testCounterContract = await TestCounterT.new();
-        counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner);
+        const testCounterContract = await TestCounterT.new()
+        counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
       })
@@ -801,8 +792,8 @@ describe('EntryPoint', function () {
         const wrongOwner = createAccountOwner()
 
         // Fund wrong owner
-        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-        await entryPoint.depositAmountTo(wrongOwner.address, BigNumber.from(ONE_HUNDERD_VTHO));
+        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+        await entryPoint.depositAmountTo(wrongOwner.address, BigNumber.from(ONE_HUNDERD_VTHO))
 
         const op = await fillAndSign({
           sender: account.address
@@ -847,7 +838,7 @@ describe('EntryPoint', function () {
         const count = await counter.populateTransaction.gasWaster(iterations, '')
         const accountExec = await account.populateTransaction.execute(counter.address, 0, count.data!)
 
-        await fundVtho(account.address);
+        await fundVtho(account.address)
 
         const op = await fillAndSign({
           sender: account.address,
@@ -856,12 +847,11 @@ describe('EntryPoint', function () {
           callGasLimit: 11e5
         }, accountOwner, entryPoint)
 
-
         const beneficiaryAddress = createAddress()
         const offsetBefore = await counter.offset()
         console.log('  == offset before', offsetBefore)
         // for estimateGas, must specify maxFeePerGas, otherwise our gas check fails
-        let ret = await entryPoint.estimateGas.handleOps([op], beneficiaryAddress, { maxFeePerGas: 1e9 }).then(tostr);
+        const ret = await entryPoint.estimateGas.handleOps([op], beneficiaryAddress, { maxFeePerGas: 1e9 }).then(tostr)
         console.log('  == est gas=', ret)
 
         // must specify at least on of maxFeePerGas, gasLimit
@@ -935,20 +925,19 @@ describe('EntryPoint', function () {
       })
 
       it('if account has a deposit, it should use it to pay', async function () {
-
         // Send some VTHO to account
-        await vtho.transfer(account.address, BigNumber.from(ONE_ETH));
+        await vtho.transfer(account.address, BigNumber.from(ONE_ETH))
         // We can't run this since it has to be done via the entryPoint
         // await account.deposit(ONE_ETH)
 
-        let sendVTHOCallData = await account.populateTransaction.deposit(ONE_ETH);
+        const sendVTHOCallData = await account.populateTransaction.deposit(ONE_ETH)
 
         const depositVTHOOp = await fillAndSign({
           sender: account.address,
           callData: sendVTHOCallData.data,
           verificationGasLimit: 1e6,
           callGasLimit: 1e6
-        }, accountOwner, entryPoint);
+        }, accountOwner, entryPoint)
 
         var beneficiaryAddress = createRandomAddress()
 
@@ -965,7 +954,7 @@ describe('EntryPoint', function () {
           verificationGasLimit: 1e6,
           callGasLimit: 1e6
         }, accountOwner, entryPoint)
-        
+
         const countBefore = await counter.counters(account.address)
         // for estimateGas, must specify maxFeePerGas, otherwise our gas check fails
         console.log('  == est gas=', await entryPoint.estimateGas.handleOps([op], beneficiaryAddress, { maxFeePerGas: 1e9 }).then(tostr))
@@ -1101,15 +1090,14 @@ describe('EntryPoint', function () {
       })
 
       it('should succeed to create account after prefund', async () => {
-        const salt = getRandomInt(1, 2147483648);
+        const salt = getRandomInt(1, 2147483648)
         const preAddr = await getAccountAddress(accountOwner.address, simpleAccountFactory, salt)
-        
-        await fund(preAddr) // send VET
-        await vtho.transfer(preAddr, BigNumber.from(ONE_HUNDERD_VTHO)); // send VTHO
-        // Fund preAddr through EntryPoint
-        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-        await entryPoint.depositAmountTo(preAddr, BigNumber.from(ONE_HUNDERD_VTHO));
 
+        await fund(preAddr) // send VET
+        await vtho.transfer(preAddr, BigNumber.from(ONE_HUNDERD_VTHO)) // send VTHO
+        // Fund preAddr through EntryPoint
+        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+        await entryPoint.depositAmountTo(preAddr, BigNumber.from(ONE_HUNDERD_VTHO))
 
         createOp = await fillAndSign({
           initCode: getAccountInitCode(accountOwner.address, simpleAccountFactory, salt),
@@ -1132,16 +1120,14 @@ describe('EntryPoint', function () {
       })
 
       it('should reject if account already created', async function () {
-        
         const salt = 20
         const preAddr = await getAccountAddress(accountOwner.address, simpleAccountFactory, salt)
-        
-        await fund(preAddr) // send VET
-        await vtho.transfer(preAddr, BigNumber.from(ONE_HUNDERD_VTHO)); // send VTHO
-        // Fund preAddr through EntryPoint
-        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO));
-        await entryPoint.depositAmountTo(preAddr, BigNumber.from(ONE_HUNDERD_VTHO));
 
+        await fund(preAddr) // send VET
+        await vtho.transfer(preAddr, BigNumber.from(ONE_HUNDERD_VTHO)) // send VTHO
+        // Fund preAddr through EntryPoint
+        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
+        await entryPoint.depositAmountTo(preAddr, BigNumber.from(ONE_HUNDERD_VTHO))
 
         createOp = await fillAndSign({
           initCode: getAccountInitCode(accountOwner.address, simpleAccountFactory, salt),
@@ -1156,14 +1142,14 @@ describe('EntryPoint', function () {
             gasLimit: 1e7
           })
         }
-      
+
         createOp = await fillAndSign({
           initCode: getAccountInitCode(accountOwner.address, simpleAccountFactory, salt),
           callGasLimit: 1e6,
           verificationGasLimit: 2e6
         }, accountOwner, entryPoint)
 
-       expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
+        expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
         })).to.revertedWith('sender already constructed')
       })
@@ -1189,16 +1175,16 @@ describe('EntryPoint', function () {
       let account2: SimpleAccount
 
       before('before', async () => {
-        let testCounterContract = await TestCounterT.new();
-        counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner);
+        const testCounterContract = await TestCounterT.new()
+        counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecCounterFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
 
-        const salt = getRandomInt(1, 2147483648);
+        const salt = getRandomInt(1, 2147483648)
 
         account1 = await getAccountAddress(accountOwner1.address, simpleAccountFactory, salt);
         ({ proxy: account2 } = await createRandomAccount(ethersSigner, await accountOwner2.getAddress()))
-        
+
         await fund(account1)
         await fundVtho(account1)
         await fund(account2.address)
@@ -1223,12 +1209,11 @@ describe('EntryPoint', function () {
 
         await fund(op1.sender)
         await fundVtho(op1.sender)
-        
+
         await fund(account2.address)
         await fundVtho(account2.address)
 
-
-        let res = await entryPoint.handleOps([op1!, op2], beneficiaryAddress, {gasLimit: 1e7, gasPrice: 1e9})//.catch((rethrow())).then(async r => r!.wait())
+        const res = await entryPoint.handleOps([op1!, op2], beneficiaryAddress, { gasLimit: 1e7, gasPrice: 1e9 })// .catch((rethrow())).then(async r => r!.wait())
         // console.log(ret.events!.map(e=>({ev:e.event, ...objdump(e.args!)})))
       })
       it('should execute', async () => {
@@ -1250,22 +1235,21 @@ describe('EntryPoint', function () {
       let aggAccount2: TestAggregatedAccount
 
       before(async () => {
-        let aggregatorContract = await TestSignatureAggregatorT.new();
+        const aggregatorContract = await TestSignatureAggregatorT.new()
         const signer2 = ethers.provider.getSigner(2)
-        aggregator = TestSignatureAggregator__factory.connect(aggregatorContract.address, signer2);
+        aggregator = TestSignatureAggregator__factory.connect(aggregatorContract.address, signer2)
         // aggregator = await new TestSignatureAggregator__factory(ethersSigner).deploy()
         // aggAccount = await new TestAggregatedAccount__factory(ethersSigner).deploy(entryPoint.address, aggregator.address)
-        let aggAccountContract = await TestAggregatedAccountT.new(entryPoint.address, aggregator.address)
-        aggAccount = TestAggregatedAccount__factory.connect(aggAccountContract.address, ethersSigner);
+        const aggAccountContract = await TestAggregatedAccountT.new(entryPoint.address, aggregator.address)
+        aggAccount = TestAggregatedAccount__factory.connect(aggAccountContract.address, ethersSigner)
         // aggAccount2 = await new TestAggregatedAccount__factory(ethersSigner).deploy(entryPoint.address, aggregator.address)
-        let aggAccount2Contract = await TestAggregatedAccountT.new(entryPoint.address, aggregator.address)
-        aggAccount2 = TestAggregatedAccount__factory.connect(aggAccount2Contract.address, ethersSigner);
-        
+        const aggAccount2Contract = await TestAggregatedAccountT.new(entryPoint.address, aggregator.address)
+        aggAccount2 = TestAggregatedAccount__factory.connect(aggAccount2Contract.address, ethersSigner)
+
         await ethersSigner.sendTransaction({ to: aggAccount.address, value: parseEther('0.1') })
         await fundVtho(aggAccount.address)
         await ethersSigner.sendTransaction({ to: aggAccount2.address, value: parseEther('0.1') })
         await fundVtho(aggAccount2.address)
-
       })
       it('should fail to execute aggregated account without an aggregator', async () => {
         const userOp = await fillAndSign({
@@ -1323,7 +1307,7 @@ describe('EntryPoint', function () {
             userOps: [userOp],
             aggregator: aggregator.address,
             signature: wrongSig
-          }], beneficiaryAddress)).to.revertedWith(`SignatureValidationFailed`)
+          }], beneficiaryAddress)).to.revertedWith('SignatureValidationFailed')
       })
 
       it('should run with multiple aggregators (and non-aggregated-accounts)', async () => {
@@ -1331,7 +1315,7 @@ describe('EntryPoint', function () {
         const aggAccount3 = await TestAggregatedAccountT.new(entryPoint.address, aggregator3.address)
         await ethersSigner.sendTransaction({ to: aggAccount3.address, value: parseEther('0.1') })
 
-        await fundVtho(aggAccount3.address);
+        await fundVtho(aggAccount3.address)
 
         const userOp1 = await fillAndSign({
           sender: aggAccount.address
@@ -1411,7 +1395,7 @@ describe('EntryPoint', function () {
           let userOp: UserOperation
           before(async () => {
             const factoryContract = await TestAggregatedAccountFactoryT.new(entryPoint.address, aggregator.address)
-            const factory = TestAggregatedAccountFactory__factory.connect(factoryContract.address, ethersSigner);
+            const factory = TestAggregatedAccountFactory__factory.connect(factoryContract.address, ethersSigner)
             initCode = await getAggregatedAccountInitCode(entryPoint.address, factory)
             addr = await entryPoint.callStatic.getSenderAddress(initCode).catch(e => e.errorArgs.sender)
             await fundVtho(addr)
@@ -1419,11 +1403,10 @@ describe('EntryPoint', function () {
             userOp = await fillAndSign({
               initCode
             }, accountOwner, entryPoint)
-
           })
           it('simulateValidation should return aggregator and its stake', async () => {
-            await vtho.approve(aggregator.address, TWO_ETH);
-            let tx = await aggregator.addStake(entryPoint.address, 3, TWO_ETH , {gasLimit: 1e7})
+            await vtho.approve(aggregator.address, TWO_ETH)
+            const tx = await aggregator.addStake(entryPoint.address, 3, TWO_ETH, { gasLimit: 1e7 })
             const { aggregatorInfo } = await entryPoint.callStatic.simulateValidation(userOp).catch(simulationResultWithAggregationCatch)
             expect(aggregatorInfo.aggregator).to.equal(aggregator.address)
             expect(aggregatorInfo.stakeInfo.stake).to.equal(TWO_ETH)
@@ -1445,20 +1428,20 @@ describe('EntryPoint', function () {
     describe('with paymaster (account with no eth)', () => {
       let paymaster: TestPaymasterAcceptAll
       let counter: TestCounter
-      let paymasterAddress: string;
+      let paymasterAddress: string
       let accountExecFromEntryPoint: PopulatedTransaction
       const account2Owner = createAccountOwner()
 
       before(async () => {
         // paymaster = await new TestPaymasterAcceptAll__factory(ethersSigner).deploy(entryPoint.address)
-        let paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
-        paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner);
-        paymasterAddress = paymasterContract.address;
+        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
+        paymasterAddress = paymasterContract.address
         // Approve VTHO to paymaster before adding stake
-        await vtho.approve(paymasterContract.address, ONE_HUNDERD_VTHO);
-        await paymaster.addStake(globalUnstakeDelaySec, paymasterStake, {gasLimit: 1e7})
-        let counterContract = await TestCounterT.new()
-        counter = TestCounter__factory.connect(counterContract.address, ethersSigner);
+        await vtho.approve(paymasterContract.address, ONE_HUNDERD_VTHO)
+        await paymaster.addStake(globalUnstakeDelaySec, paymasterStake, { gasLimit: 1e7 })
+        const counterContract = await TestCounterT.new()
+        counter = TestCounter__factory.connect(counterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
       })
@@ -1489,14 +1472,13 @@ describe('EntryPoint', function () {
       })
 
       it('paymaster should pay for tx', async function () {
-        
-        let paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
-        const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner);
+        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
 
         await fundVtho(paymaster.address)
-        await paymaster.deposit(ONE_ETH, {gasLimit: 1e7})
+        await paymaster.deposit(ONE_ETH, { gasLimit: 1e7 })
 
-        let balanceBefore = await entryPoint.balanceOf(paymaster.address);
+        const balanceBefore = await entryPoint.balanceOf(paymaster.address)
         // console.log("Balance Before", balanceBefore)
 
         const op = await fillAndSign({
@@ -1506,25 +1488,24 @@ describe('EntryPoint', function () {
         }, account2Owner, entryPoint)
         const beneficiaryAddress = createRandomAddress()
 
-        const rcpt = await entryPoint.handleOps([op], beneficiaryAddress, {gasLimit: 1e7}).then(async t => t.wait())
+        const rcpt = await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 }).then(async t => t.wait())
 
         // const { actualGasCost } = await calcGasUsage(rcpt, entryPoint, beneficiaryAddress)
-        let balanceAfter = await entryPoint.balanceOf(paymaster.address)
-        const paymasterPaid = balanceBefore.sub(balanceAfter);
+        const balanceAfter = await entryPoint.balanceOf(paymaster.address)
+        const paymasterPaid = balanceBefore.sub(balanceAfter)
         expect(paymasterPaid.toNumber()).to.greaterThan(0)
       })
       it('simulateValidation should return paymaster stake and delay', async () => {
-
         // await fundVtho(paymasterAddress);
-        let paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
-        const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner);
+        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
 
-        const vtho = ERC20__factory.connect(config.VTHOAddress, ethersSigner);
+        const vtho = ERC20__factory.connect(config.VTHOAddress, ethersSigner)
 
         // Vtho uses the same signer as paymaster
         await vtho.approve(paymasterContract.address, ONE_THOUSAND_VTHO)
-        await paymaster.addStake(2, paymasterStake, {gasLimit: 1e7})
-        await paymaster.deposit(ONE_HUNDERD_VTHO, {gasLimit: 1e7})
+        await paymaster.addStake(2, paymasterStake, { gasLimit: 1e7 })
+        await paymaster.deposit(ONE_HUNDERD_VTHO, { gasLimit: 1e7 })
 
         const anOwner = createRandomAccountOwner()
         const op = await fillAndSign({
@@ -1533,9 +1514,9 @@ describe('EntryPoint', function () {
           callGasLimit: BigNumber.from(1234567),
           verificationGasLimit: BigNumber.from(1234567),
           initCode: getAccountInitCode(anOwner.address, simpleAccountFactory, getRandomInt(1, 2147483648))
-        }, anOwner, entryPoint) 
+        }, anOwner, entryPoint)
 
-        const { paymasterInfo } = await entryPoint.callStatic.simulateValidation(op, {gasLimit: 1e7}).catch(simulationResultCatch)
+        const { paymasterInfo } = await entryPoint.callStatic.simulateValidation(op, { gasLimit: 1e7 }).catch(simulationResultCatch)
         const {
           stake: simRetStake,
           unstakeDelaySec: simRetDelay
@@ -1554,7 +1535,7 @@ describe('EntryPoint', function () {
       before('init account with session key', async () => {
         // create a test account. The primary owner is the global ethersSigner, so that we can easily add a temporaryOwner, below
         // account = await new TestExpiryAccount__factory(ethersSigner).deploy(entryPoint.address)
-        account =  await TestExpiryAccountT.new(entryPoint.address);
+        account = await TestExpiryAccountT.new(entryPoint.address)
         await account.initialize(await ethersSigner.getAddress())
         await ethersSigner.sendTransaction({ to: account.address, value: parseEther('0.1') })
         now = await ethers.provider.getBlock('latest').then(block => block.timestamp)
@@ -1564,7 +1545,7 @@ describe('EntryPoint', function () {
 
       describe('validateUserOp time-range', function () {
         it('should accept non-expired owner', async () => {
-          await fundVtho(account.address);
+          await fundVtho(account.address)
           const userOp = await fillAndSign({
             sender: account.address
           }, sessionOwner, entryPoint)
@@ -1591,21 +1572,21 @@ describe('EntryPoint', function () {
         let now: number
         before('init account with session key', async function () {
           // this.timeout(20000)
-          await new Promise(r => setTimeout(r, 20000));
+          await new Promise(r => setTimeout(r, 20000))
           // Deploy Paymaster
-          let paymasterContract = await TestExpirePaymasterT.new(entryPoint.address)
-          paymaster = TestExpirePaymaster__factory.connect(paymasterContract.address, ethersSigner);
-           // Approve VTHO to paymaster before adding stake
-           await fundVtho(paymasterContract.address, ONE_HUNDERD_VTHO);
+          const paymasterContract = await TestExpirePaymasterT.new(entryPoint.address)
+          paymaster = TestExpirePaymaster__factory.connect(paymasterContract.address, ethersSigner)
+          // Approve VTHO to paymaster before adding stake
+          await fundVtho(paymasterContract.address, ONE_HUNDERD_VTHO)
 
-          await paymaster.addStake(1, paymasterStake , {gasLimit: 1e7})
-          await paymaster.deposit(parseEther('0.1'), {gasLimit: 1e7})
+          await paymaster.addStake(1, paymasterStake, { gasLimit: 1e7 })
+          await paymaster.deposit(parseEther('0.1'), { gasLimit: 1e7 })
           now = await ethers.provider.getBlock('latest').then(block => block.timestamp)
         })
 
         it('should accept non-expired paymaster request', async () => {
           const timeRange = defaultAbiCoder.encode(['uint48', 'uint48'], [123, now + 60])
-          await fundVtho(account.address);
+          await fundVtho(account.address)
           const userOp = await fillAndSign({
             sender: account.address,
             paymasterAndData: hexConcat([paymaster.address, timeRange])
@@ -1674,7 +1655,7 @@ describe('EntryPoint', function () {
           const expiredOwner = createRandomAccountOwner()
           await account.addTemporaryOwner(expiredOwner.address, 1, 2)
 
-          await fundVtho(account.address);
+          await fundVtho(account.address)
 
           const userOp = await fillAndSign({
             sender: account.address
@@ -1683,10 +1664,9 @@ describe('EntryPoint', function () {
             .to.revertedWith('AA22 expired or not due')
         })
 
-
         // this test passed when running it individually but fails when its run alonside the other tests
         it('should revert on date owner', async () => {
-          await fundVtho(account.address);
+          await fundVtho(account.address)
 
           const futureOwner = createRandomAccountOwner()
           await account.addTemporaryOwner(futureOwner.address, now + 1000, now + 2000)
@@ -1700,10 +1680,3 @@ describe('EntryPoint', function () {
     })
   })
 })
-
-function getRandomInt(min: any, max: any) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min);
-}
-
