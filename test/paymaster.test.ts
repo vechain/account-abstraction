@@ -157,20 +157,16 @@ describe('EntryPoint with paymaster', function () {
         }, accountOwner, entryPoint)
 
         const preAddr = createOp.sender
-        await paymaster.mintTokens(preAddr, parseEther('1'))
+        await paymaster.mintTokens(preAddr, parseEther('1')).then(async tx => tx.wait())
         // paymaster is the token, so no need for "approve" or any init function...
 
         await entryPoint.simulateValidation(createOp, { gasLimit: 5e6 }).catch(e => e.message)
-        const [tx] = await ethers.provider.getBlock('latest').then(block => block.transactions)
+        // const [tx] = await ethers.provider.getBlock('latest').then(block => block.transactions)
         // await checkForBannedOps(tx, true)
 
-        try {
-          const rcpt = await entryPoint.handleOps([createOp], beneficiaryAddress, { gasLimit: 1e7 })
-            .catch(rethrow()).then(async tx => await tx!.wait()) // this sometimes fails
-          console.log('\t== create gasUsed=', rcpt.gasUsed.toString())
-          await calcGasUsage(rcpt, entryPoint)
-        } catch (_) {
-        }
+        const rcpt = await entryPoint.handleOps([createOp], beneficiaryAddress, { gasLimit: 1e7 }).then(async tx => tx.wait())
+        console.log('\t== create gasUsed=', rcpt.gasUsed.toString())
+        await calcGasUsage(rcpt, entryPoint)
 
         created = true
       })
@@ -233,8 +229,7 @@ describe('EntryPoint with paymaster', function () {
 
         const pmBalanceBefore = await paymaster.balanceOf(paymaster.address).then(b => b.toNumber())
         await entryPoint.handleOps(ops, beneficiaryAddress, { gasLimit: 1e7 })
-          .catch(e => console.log(e.message))
-        // .then(async tx => tx.wait())
+          .then(async tx => tx.wait())
         const totalPaid = await paymaster.balanceOf(paymaster.address).then(b => b.toNumber()) - pmBalanceBefore
         for (let i = 0; i < accounts.length; i++) {
           const bal = await getTokenBalance(paymaster, accounts[i].address)
