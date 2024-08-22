@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Wallet } from 'ethers'
+import { BigNumber, Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 import {
@@ -170,7 +170,7 @@ describe('SimpleAccount', function () {
       const callGasLimit = 200000
       const verificationGasLimit = 100000
       const maxFeePerGas = 3e9
-      const chainId = await ethers.provider.send('eth_chainId', []) // await ethers.provider.getNetwork().then(net => net.chainId)
+      const chainId = BigNumber.from('0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6')
 
       userOp = signUserOp(fillUserOpDefaults({
         sender: account.address,

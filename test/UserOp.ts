@@ -1,17 +1,17 @@
+import { ecsign, keccak256 as keccak256_buffer, toRpcSig } from 'ethereumjs-util'
+import { BigNumber, Contract, Signer, Wallet } from 'ethers'
 import {
   arrayify,
   defaultAbiCoder,
   hexDataSlice,
   keccak256
 } from 'ethers/lib/utils'
-import { BigNumber, Contract, Signer, Wallet } from 'ethers'
-import { AddressZero, callDataCost, rethrow } from './testutils'
-import { ecsign, toRpcSig, keccak256 as keccak256_buffer } from 'ethereumjs-util'
+import { Create2Factory } from '../src/Create2Factory'
 import {
   EntryPoint
 } from '../typechain'
+import { AddressZero, callDataCost, rethrow } from './testutils'
 import { UserOperation } from './UserOperation'
-import { Create2Factory } from '../src/Create2Factory'
 
 export function packUserOp (op: UserOperation, forSignature = true): string {
   if (forSignature) {
@@ -60,7 +60,7 @@ export function packUserOp1 (op: UserOperation): string {
   ])
 }
 
-export function getUserOpHash (op: UserOperation, entryPoint: string, chainId: number): string {
+export function getUserOpHash (op: UserOperation, entryPoint: string, chainId: BigNumber): string {
   const userOpHash = keccak256(packUserOp(op, true))
   const enc = defaultAbiCoder.encode(
     ['bytes32', 'address', 'uint256'],
@@ -82,7 +82,7 @@ export const DefaultsForUserOp: UserOperation = {
   signature: '0x'
 }
 
-export function signUserOp (op: UserOperation, signer: Wallet, entryPoint: string, chainId: number): UserOperation {
+export function signUserOp (op: UserOperation, signer: Wallet, entryPoint: string, chainId: BigNumber): UserOperation {
   const message = getUserOpHash(op, entryPoint, chainId)
   const msg1 = Buffer.concat([
     Buffer.from('\x19Ethereum Signed Message:\n32', 'ascii'),
@@ -174,8 +174,8 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
   }
   if (op1.maxFeePerGas == null) {
     if (provider == null) throw new Error('must have entryPoint to autofill maxFeePerGas')
-    const block = await provider.getBlock('latest')
-    op1.maxFeePerGas = op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas
+    // 8 would be what represents baseFeePerGas in Ethereum
+    op1.maxFeePerGas = BigNumber.from(op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas).add(8)
   }
   // TODO: this is exactly what fillUserOp below should do - but it doesn't.
   // adding this manually
@@ -192,10 +192,15 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
 }
 
 export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | Signer, entryPoint?: EntryPoint, getNonceFunction = 'getNonce'): Promise<UserOperation> {
-  const provider = entryPoint?.provider
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
 
-  const chainId = await provider!.send('eth_chainId', []) // await provider!.getNetwork().then(net => net.chainId)
+  // chainId from Thor Solo
+  const chainId = BigNumber.from('0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6')
+
+  if (signer instanceof Wallet) {
+    return signUserOp(op2, signer, entryPoint!.address, chainId)
+  }
+
   const message = arrayify(getUserOpHash(op2, entryPoint!.address, chainId))
 
   return {
