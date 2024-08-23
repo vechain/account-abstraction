@@ -1,88 +1,40 @@
-name: Build
+name: Build and tests
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
-    types: [opened, reopened, synchronize]
+    branches:
+      - vechain
 
-env:
-  TS_NODE_TRANSPILE_ONLY: 1
-  FORCE_COLORS: 1
-
-# todo: extract shared seto/checkout/install/compile, instead of repeat in each job.
 jobs:
-
-  test:
+  run-tests-and-build-report:
+    name: Test Smart Contracts with Hardhat
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: read
 
     steps:
-      - uses: actions/setup-node@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: '14'
-      - uses: actions/checkout@v1
-      - uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-      - run: yarn install
-      - run: yarn compile
+          fetch-depth: 0 
 
-      - run: yarn run ci
+      - name: Use Node v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+          registry-url: 'https://npm.pkg.github.com'
+          always-auth: true
+          scope: '@vechain'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}      
 
-  gas-checks:
-    runs-on: ubuntu-latest
-    services:
-      localgeth:
-        image: dtr22/geth-dev
+      - name: Install dependencies
+        run: yarn install
+    
+      - name: Smart contract tests
+        run: yarn test
 
-    steps:
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14'
-      - uses: actions/checkout@v1
-      - uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-      - run: yarn install
-      - run: yarn compile
-      - run: yarn ci-gas-calc
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14'
-      - uses: actions/checkout@v1
-      - uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-      - run: yarn install
-      - run: yarn lint
-
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14'
-      - uses: actions/checkout@v1
-      - uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('yarn.lock') }}
-      - run: yarn install
-
-      - run: yarn compile
-
-      - run: FORCE_COLOR=1 yarn coverage
-      - uses: actions/upload-artifact@v2
-        with:
-          name: solidity-coverage
-          path: |
-            coverage/
-            coverage.json
 
