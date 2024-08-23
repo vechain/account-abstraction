@@ -635,7 +635,7 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
      * the gas price this UserOp agrees to pay.
      * relayer/block builder might submit the TX with higher priorityFee, but the user should not
      */
-    function getUserOpGasPrice(MemoryUserOp memory mUserOp) internal view returns (uint256) {
+    function getUserOpGasPrice(MemoryUserOp memory mUserOp) internal pure returns (uint256) {
     unchecked {
         uint256 maxFeePerGas = mUserOp.maxFeePerGas;
         uint256 maxPriorityFeePerGas = mUserOp.maxPriorityFeePerGas;
@@ -644,7 +644,8 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
             return maxFeePerGas;
         }
         // VeChain does not have base block.basefee
-        return min(maxFeePerGas, maxPriorityFeePerGas + 8);
+        // In Ethereum this line is min(maxFeePerGas, maxPriorityFeePerGas + block.basefee)
+        return min(maxFeePerGas, maxPriorityFeePerGas);
     }
     }
 
