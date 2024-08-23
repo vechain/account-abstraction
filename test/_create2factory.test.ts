@@ -5,9 +5,8 @@ import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory, TestUt
 const TestUtil = artifacts.require('TestUtil')
 const EntryPoint = artifacts.require('EntryPoint')
 const SimpleAccountFactory = artifacts.require('SimpleAccountFactory')
-const { expect } = require('chai')
 
-contract('Deployments', function (accounts) {
+contract('Factory', function (accounts) {
   let testUtils: TestUtil
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
