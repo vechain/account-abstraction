@@ -62,7 +62,6 @@ export const FIVE_ETH = parseEther('5')
 
 const signer2 = ethers.provider.getSigner(2)
 const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
-const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
 
 export const tostr = (x: any): string => x != null ? x.toString() : 'null'
 
@@ -126,7 +125,7 @@ export function callDataCost (data: string): number {
     .reduce((sum, x) => sum + x)
 }
 
-export async function fundVtho (contractOrAddress: string | Contract, ONE_HUNDERD_VTHO = '100000000000000000000'): Promise<void> {
+export async function fundVtho (contractOrAddress: string | Contract, entryPoint: EntryPoint, vthoAmount = '100000000000000000000'): Promise<void> {
   let address: string
   if (typeof contractOrAddress === 'string') {
     address = contractOrAddress
@@ -134,10 +133,10 @@ export async function fundVtho (contractOrAddress: string | Contract, ONE_HUNDER
     address = contractOrAddress.address
   }
 
-  await vtho.transfer(address, BigNumber.from(ONE_HUNDERD_VTHO)) // send VTHO
+  await vtho.transfer(address, BigNumber.from(vthoAmount)) // send VTHO
   // Fund preAddr through EntryPoint
-  await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
-  await entryPoint.depositAmountTo(address, BigNumber.from(ONE_HUNDERD_VTHO))
+  await vtho.approve(entryPoint.address, BigNumber.from(vthoAmount))
+  await entryPoint.depositAmountTo(address, BigNumber.from(vthoAmount))
 }
 
 export async function calcGasUsage (rcpt: ContractReceipt, entryPoint: EntryPoint, beneficiaryAddress?: string): Promise<{ actualGasCost: BigNumberish }> {
