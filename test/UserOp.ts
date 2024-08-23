@@ -10,7 +10,7 @@ import { Create2Factory } from '../src/Create2Factory'
 import {
   EntryPoint
 } from '../typechain'
-import { AddressZero, callDataCost, rethrow } from './testutils'
+import { AddressZero, callDataCost, getVeChainChainId, rethrow } from './testutils'
 import { UserOperation } from './UserOperation'
 
 export function packUserOp (op: UserOperation, forSignature = true): string {
@@ -195,7 +195,7 @@ export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | 
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
 
   // chainId from Thor Solo
-  const chainId = BigNumber.from('0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6')
+  const chainId = getVeChainChainId()
 
   if (signer instanceof Wallet) {
     return signUserOp(op2, signer, entryPoint!.address, chainId)

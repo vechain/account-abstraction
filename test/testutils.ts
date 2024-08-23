@@ -376,3 +376,7 @@ export async function createRandomAccount (
     proxy
   }
 }
+
+export function getVeChainChainId (): BigNumber {
+  return BigNumber.from('0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6')
+}
