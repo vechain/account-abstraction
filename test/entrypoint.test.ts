@@ -737,8 +737,8 @@ describe('EntryPoint', function () {
 
     before(async () => {
       entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
-      const { account: proxy } = await createRandomAccountFromFactory(simpleAccountFactory, ethersSigner, accountOwner.address)
-      sender = proxy.address
+      const { account } = await createRandomAccountFromFactory(simpleAccountFactory, ethersSigner, accountOwner.address)
+      sender = account.address
       await fund(sender)
       await fundVtho(sender)
     })
