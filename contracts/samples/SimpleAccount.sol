@@ -121,18 +121,25 @@ contract SimpleAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, In
         }
     }
 
-    function _authorizeUpgrade(address newImplementation) internal view override {
-        (newImplementation);
-        _onlyOwner();
+    /**
+     * check current account deposit in the entryPoint
+     */
+    function getDeposit() public view returns (uint256) {
+        return entryPoint().balanceOf(address(this));
     }
 
-            /**
+    /**
      * withdraw value from the account's deposit
      * @param withdrawAddress target to send to
      * @param amount to withdraw
      */
     function withdrawDepositTo(address payable withdrawAddress, uint256 amount) public onlyOwner {
         entryPoint().withdrawTo(withdrawAddress, amount);
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        (newImplementation);
+        _onlyOwner();
     }
 }
 
