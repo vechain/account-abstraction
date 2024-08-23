@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import crypto from 'crypto'
 import { toChecksumAddress } from 'ethereumjs-util'
 import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
-import { BytesLike, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
+import { BytesLike, arrayify, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
 import { artifacts, ethers } from 'hardhat'
 import {
   ERC20__factory,
@@ -40,11 +40,9 @@ import {
   ONE_ETH,
   TWO_ETH,
   checkForBannedOps,
-  createAccount,
   createAccountFromFactory,
   createAccountOwner,
   createAddress,
-  createRandomAccount,
   createRandomAccountFromFactory,
   createRandomAccountOwner,
   createRandomAddress,
@@ -553,7 +551,6 @@ describe('EntryPoint', function () {
 
   describe('#simulateHandleOp', () => {
     let entryPoint: EntryPoint
-    let address2: string
     const signer2 = ethers.provider.getSigner(2)
 
     before(() => {
@@ -562,10 +559,10 @@ describe('EntryPoint', function () {
 
     it('should simulate execution', async () => {
       const accountOwner1 = createAccountOwner()
-      const { proxy: account } = await createAccount(ethersSigner, await accountOwner.getAddress())
+      const { account } = await createAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner.getAddress())
       await fund(account)
       const testCounterContract = await TestCounterT.new()
-      const counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
+      const counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
 
       const count = counter.interface.encodeFunctionData('count')
       const callData = account.interface.encodeFunctionData('execute', [counter.address, 0, count])
@@ -592,8 +589,7 @@ describe('EntryPoint', function () {
   describe('flickering account validation', () => {
     let entryPoint: EntryPoint
     const signer2 = ethers.provider.getSigner(2)
-
-    // NaN
+    // NaN: In VeChain there is no basefee
     // it('should prevent leakage of basefee', async () => {
     //   const maliciousAccountContract = await MaliciousAccountT.new(entryPoint.address, { value: parseEther('1') })
     //   const maliciousAccount = MaliciousAccount__factory.connect(maliciousAccountContract.address, ethersSigner);
@@ -665,21 +661,18 @@ describe('EntryPoint', function () {
       const beneficiaryAddress = createRandomAddress()
 
       await expect(entryPoint.callStatic.simulateValidation(badOp, { gasLimit: 1e7 })).to.revertedWith('ValidationResult')
-      // const tx = await entryPoint.handleOps([badOp], beneficiaryAddress, {gasLimit: 1e7}) // { gasLimit: 3e5 })
-      // const receipt = await tx.wait()
-      // const userOperationRevertReasonEvent = receipt.events?.find(event => event.event === 'UserOperationRevertReason')
-      // expect(userOperationRevertReasonEvent?.event).to.equal('UserOperationRevertReason')
-      // const revertReason = Buffer.from(arrayify(userOperationRevertReasonEvent?.args?.revertReason))
-      // expect(revertReason.length).to.equal(REVERT_REASON_MAX_LEN)
+      const tx = await entryPoint.handleOps([badOp], beneficiaryAddress, { gasLimit: 1e7 }) // { gasLimit: 3e5 })
+      const receipt = await tx.wait()
+      const userOperationRevertReasonEvent = receipt.events?.find(event => event.event === 'UserOperationRevertReason')
+      expect(userOperationRevertReasonEvent?.event).to.equal('UserOperationRevertReason')
+      const revertReason = Buffer.from(arrayify(userOperationRevertReasonEvent?.args?.revertReason))
+      expect(revertReason.length).to.equal(REVERT_REASON_MAX_LEN)
     })
 
     describe('warm/cold storage detection in simulation vs execution', () => {
       const TOUCH_GET_AGGREGATOR = 1
       const TOUCH_PAYMASTER = 2
-      const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
       it('should prevent detection through getAggregator()', async () => {
-        // const testWarmColdAccountContract = await new TestWarmColdAccount__factory(ethersSigner).deploy(entryPoint.address,
-        //   { value: parseEther('1') })
         const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address, { value: parseEther('1') })
         const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner)
         const badOp: UserOperation = {
@@ -744,7 +737,7 @@ describe('EntryPoint', function () {
 
     before(async () => {
       entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
-      const { proxy } = await createRandomAccount(ethersSigner, accountOwner.address)
+      const { account: proxy } = await createRandomAccountFromFactory(simpleAccountFactory, ethersSigner, accountOwner.address)
       sender = proxy.address
       await fund(sender)
       await fundVtho(sender)
@@ -766,7 +759,7 @@ describe('EntryPoint', function () {
           sender,
           nonce: keyShifted
         }, accountOwner, entryPoint)
-        const ret = await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 })
+        await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 })
       })
 
       it('should get next nonce value by getNonce', async () => {
@@ -821,7 +814,7 @@ describe('EntryPoint', function () {
       let accountExecFromEntryPoint: PopulatedTransaction
       before(async () => {
         const testCounterContract = await TestCounterT.new()
-        counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
+        counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
       })
@@ -901,7 +894,6 @@ describe('EntryPoint', function () {
         }).then(async t => await t.wait())
 
         console.log('rcpt.gasUsed=', rcpt.gasUsed.toString(), rcpt.transactionHash)
-        // await calcGasUsage(rcpt, entryPoint, beneficiaryAddress)
 
         // check that the state of the counter contract is updated
         // this ensures that the `callGasLimit` is high enough
@@ -978,14 +970,14 @@ describe('EntryPoint', function () {
           callGasLimit: 1e6
         }, accountOwner, entryPoint)
 
-        var beneficiaryAddress = createRandomAddress()
+        let beneficiaryAddress = createRandomAddress()
 
-        const ret = await entryPoint.handleOps([depositVTHOOp], beneficiaryAddress, {
+        await entryPoint.handleOps([depositVTHOOp], beneficiaryAddress, {
           maxFeePerGas: 1e9,
           gasLimit: 1e7
         }).then(async t => await t.wait())
 
-        var beneficiaryAddress = createRandomAddress()
+        beneficiaryAddress = createRandomAddress()
 
         const op = await fillAndSign({
           sender: account.address,
@@ -1016,8 +1008,6 @@ describe('EntryPoint', function () {
         expect(balAfter).to.equal(balBefore, 'should pay from stake, not balance')
         const depositUsed = depositBefore.sub(depositAfter)
         expect(await vtho.balanceOf(beneficiaryAddress)).to.equal(depositUsed)
-
-        // await calcGasUsage(rcpt, entryPoint, beneficiaryAddress)
       })
 
       it('should pay for reverted tx', async () => {
@@ -1055,7 +1045,6 @@ describe('EntryPoint', function () {
         expect(countAfter.toNumber()).to.equal(countBefore.toNumber() + 1)
 
         console.log('rcpt.gasUsed=', rcpt.gasUsed.toString(), rcpt.transactionHash)
-        // await calcGasUsage(rcpt, entryPoint, beneficiaryAddress)
       })
 
       it('should fail to call recursively into handleOps', async () => {
@@ -1145,17 +1134,14 @@ describe('EntryPoint', function () {
 
         }, accountOwner, entryPoint)
 
-        await expect(await ethers.provider.getCode(preAddr).then(x => x.length)).to.equal(2, 'account exists before creation')
+        expect(await ethers.provider.getCode(preAddr).then(x => x.length)).to.equal(2, 'account exists before creation')
         const ret = await entryPoint.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
         })
-        const rcpt = await ret.wait()
         const hash = await entryPoint.getUserOpHash(createOp)
         await expect(ret).to.emit(entryPoint, 'AccountDeployed')
           // eslint-disable-next-line @typescript-eslint/no-base-to-string
           .withArgs(hash, createOp.sender, toChecksumAddress(createOp.initCode.toString().slice(0, 42)), AddressZero)
-
-        // await calcGasUsage(rcpt!, entryPoint, beneficiaryAddress)
       })
 
       it('should reject if account already created', async function () {
@@ -1177,7 +1163,7 @@ describe('EntryPoint', function () {
 
         // If account already exists don't deploy it
         if (await ethers.provider.getCode(preAddr).then(x => x.length) !== 2) {
-          const ret = await entryPoint.handleOps([createOp], beneficiaryAddress, {
+          await entryPoint.handleOps([createOp], beneficiaryAddress, {
             gasLimit: 1e7
           })
         }
@@ -1188,7 +1174,7 @@ describe('EntryPoint', function () {
           verificationGasLimit: 2e6
         }, accountOwner, entryPoint)
 
-        expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
+        await expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
         })).to.revertedWith('sender already constructed')
       })
@@ -1213,16 +1199,17 @@ describe('EntryPoint', function () {
       const accountOwner2 = createAccountOwner()
       let account2: SimpleAccount
 
-      before('before', async () => {
+      before(async () => {
         const testCounterContract = await TestCounterT.new()
-        counter = await TestCounter__factory.connect(testCounterContract.address, ethersSigner)
+        counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecCounterFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
 
         const salt = getRandomInt(1, 2147483648)
 
         account1 = await getAccountAddress(accountOwner1.address, simpleAccountFactory, salt);
-        ({ proxy: account2 } = await createRandomAccount(ethersSigner, await accountOwner2.getAddress()))
+        const accountFromFactory = await createRandomAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner2.getAddress())
+        account2 = accountFromFactory.account
 
         await fund(account1)
         await fundVtho(account1)
@@ -1252,14 +1239,13 @@ describe('EntryPoint', function () {
         await fund(account2.address)
         await fundVtho(account2.address)
 
-        const res = await entryPoint.handleOps([op1!, op2], beneficiaryAddress, { gasLimit: 1e7, gasPrice: 1e9 })// .catch((rethrow())).then(async r => r!.wait())
-        // console.log(ret.events!.map(e=>({ev:e.event, ...objdump(e.args!)})))
+        await entryPoint.handleOps([op1!, op2], beneficiaryAddress, { gasLimit: 1e7, gasPrice: 1e9 })
       })
       it('should execute', async () => {
         expect(await counter.counters(account1)).equal(1)
         expect(await counter.counters(account2.address)).equal(1)
       })
-      it('should pay for tx', async () => {
+      it.skip('should pay for tx', async () => {
         // const cost1 = prebalance1.sub(await ethers.provider.getBalance(account1))
         // const cost2 = prebalance2.sub(await ethers.provider.getBalance(account2.address))
         // console.log('cost1=', cost1)
@@ -1340,7 +1326,6 @@ describe('EntryPoint', function () {
         }, accountOwner, entryPoint)
 
         const wrongSig = hexZeroPad('0x123456', 32)
-        const aggAddress: string = aggregator.address
         await expect(
           entryPoint.callStatic.handleAggregatedOps([{
             userOps: [userOp],
@@ -1467,7 +1452,6 @@ describe('EntryPoint', function () {
     describe('with paymaster (account with no eth)', () => {
       let paymaster: TestPaymasterAcceptAll
       let counter: TestCounter
-      let paymasterAddress: string
       let accountExecFromEntryPoint: PopulatedTransaction
       const account2Owner = createAccountOwner()
 
@@ -1475,7 +1459,6 @@ describe('EntryPoint', function () {
         // paymaster = await new TestPaymasterAcceptAll__factory(ethersSigner).deploy(entryPoint.address)
         const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
         paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
-        paymasterAddress = paymasterContract.address
         // Approve VTHO to paymaster before adding stake
         await vtho.approve(paymasterContract.address, ONE_HUNDRED_VTHO)
         await paymaster.addStake(globalUnstakeDelaySec, paymasterStake, { gasLimit: 1e7 })

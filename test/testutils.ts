@@ -1,47 +1,28 @@
-import config from './config'
 import {
   ERC20__factory,
   EntryPoint,
   EntryPoint__factory,
-  SimpleAccountFactory,
-  SimpleAccountFactory__factory
-  ,
   IERC20,
   IEntryPoint,
   SimpleAccount,
+  SimpleAccountFactory,
   SimpleAccount__factory, TestAggregatedAccountFactory
 } from '../typechain'
+import config from './config'
 
-import { ethers } from 'hardhat'
+import { BytesLike } from '@ethersproject/bytes'
+import { expect } from 'chai'
+import { randomInt } from 'crypto'
+import { BigNumber, BigNumberish, Contract, ContractReceipt, Signer, Wallet } from 'ethers'
 import {
   arrayify,
   hexConcat,
   keccak256,
   parseEther
 } from 'ethers/lib/utils'
-import { BigNumber, BigNumberish, Contract, ContractReceipt, Signer, Wallet } from 'ethers'
-import { BytesLike } from '@ethersproject/bytes'
-import { expect } from 'chai'
+import { ethers } from 'hardhat'
 import { debugTransaction } from './_debugTx'
 import { UserOperation } from './UserOperation'
-import { randomInt } from 'crypto'
-
-export async function createAccount (
-  ethersSigner: Signer,
-  accountOwner: string
-): Promise<{
-    proxy: SimpleAccount
-    accountFactory: SimpleAccountFactory
-  }> {
-  const accountFactory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
-  await accountFactory.createAccount(accountOwner, 0)
-  const accountAddress = await accountFactory.getAddress(accountOwner, 0)
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
-  return {
-    accountFactory,
-    proxy
-  }
-}
 
 export async function createAccountFromFactory (
   accountFactory: SimpleAccountFactory,
@@ -355,26 +336,6 @@ export function userOpsWithoutAgg (userOps: UserOperation[]): IEntryPoint.UserOp
     aggregator: AddressZero,
     signature: '0x'
   }]
-}
-
-export async function createRandomAccount (
-  ethersSigner: Signer,
-  accountOwner: string
-): Promise<{
-    proxy: SimpleAccount
-    accountFactory: SimpleAccountFactory
-  }> {
-  const accountFactory = new SimpleAccountFactory__factory()
-    .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner)
-  const salt = seed++
-  await accountFactory.createAccount(accountOwner, salt)
-  const accountAddress = await accountFactory.getAddress(accountOwner, salt)
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
-  return {
-    accountFactory,
-    proxy
-  }
 }
 
 export function getVeChainChainId (): BigNumber {
