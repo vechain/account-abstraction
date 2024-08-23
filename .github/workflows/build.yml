@@ -5,7 +5,7 @@ on:
       - vechain
 
 jobs:
-  run-tests-and-build-report:
+  install-and-run-hh-tests:
     name: Test Smart Contracts with Hardhat
     runs-on: ubuntu-latest
     permissions:
