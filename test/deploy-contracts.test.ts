@@ -1,9 +1,8 @@
-import { artifacts } from 'hardhat'
+import { artifacts, contract } from 'hardhat'
 
 const TestUtil = artifacts.require('TestUtil')
 const EntryPoint = artifacts.require('EntryPoint')
 const SimpleAccountFactory = artifacts.require('SimpleAccountFactory')
-const SimpleAccount = artifacts.require('SimpleAccount')
 const TokenPaymaster = artifacts.require('TokenPaymaster')
 
 contract('Deployments', function (accounts) {
@@ -11,11 +10,6 @@ contract('Deployments', function (accounts) {
     const testUtils = await TestUtil.new({ from: accounts[0] })
     const entryPoint = await EntryPoint.new({ from: accounts[0] })
     const simpleAccountFactory = await SimpleAccountFactory.new(entryPoint.address, { from: accounts[0] })
-
-    const tx = await simpleAccountFactory.createAccount(accounts[0], 0)
-
-    const simpleAccountAddress = await simpleAccountFactory.getAddress(accounts[0], 0)
-    const simpleAccountContract = await new SimpleAccount(simpleAccountAddress)
 
     const tokenPaymaster = await TokenPaymaster.new(simpleAccountFactory.address, 'ttt', entryPoint.address)
 

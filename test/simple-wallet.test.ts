@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
-import { ethers } from 'hardhat'
+import { artifacts, ethers } from 'hardhat'
 import {
   SimpleAccount,
   SimpleAccountFactory,
