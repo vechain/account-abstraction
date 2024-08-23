@@ -1,7 +1,6 @@
 import {
   ERC20__factory,
   EntryPoint,
-  EntryPoint__factory,
   IERC20,
   IEntryPoint,
   SimpleAccount,
