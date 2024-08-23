@@ -643,7 +643,7 @@ contract EntryPoint is IEntryPoint, StakeManager, NonceManager, ReentrancyGuard 
             //legacy mode (for networks that don't support basefee opcode)
             return maxFeePerGas;
         }
-        // VeChain does not have base block.basefee
+        // VeChain does not have block.basefee
         // In Ethereum this line is min(maxFeePerGas, maxPriorityFeePerGas + block.basefee)
         return min(maxFeePerGas, maxPriorityFeePerGas);
     }
