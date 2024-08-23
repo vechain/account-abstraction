@@ -1,10 +1,12 @@
 import { expect } from 'chai'
+import crypto from 'crypto'
 import { toChecksumAddress } from 'ethereumjs-util'
 import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
 import { BytesLike, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
 import { artifacts, ethers } from 'hardhat'
 import {
   ERC20__factory,
+  EntryPoint,
   EntryPoint__factory,
   SimpleAccount,
   SimpleAccountFactory,
@@ -39,6 +41,7 @@ import {
   TWO_ETH,
   checkForBannedOps,
   createAccount,
+  createAccountFromFactory,
   createAccountOwner,
   createAddress,
   createRandomAccount,
@@ -51,11 +54,11 @@ import {
   getAccountInitCode,
   getAggregatedAccountInitCode,
   getBalance,
+  getVeChainChainId,
   simulationResultCatch,
   simulationResultWithAggregationCatch,
   tostr
 } from './testutils'
-import crypto from 'crypto'
 
 const TestCounterT = artifacts.require('TestCounter')
 const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator')
@@ -83,6 +86,7 @@ function getRandomInt (min: number, max: number): number {
 
 describe('EntryPoint', function () {
   let simpleAccountFactory: SimpleAccountFactory
+  let entryPointAddress: string
 
   let accountOwner: Wallet
   const ethersSigner = ethers.provider.getSigner()
@@ -92,14 +96,18 @@ describe('EntryPoint', function () {
   const paymasterStake = ethers.utils.parseEther('2')
 
   before(async function () {
-    const chainId = await ethers.provider.send('eth_chainId', []) // await ethers.provider.getNetwork().then(net => net.chainId);
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
+    const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+    const entryPoint = await entryPointFactory.deploy()
+    entryPointAddress = entryPoint.address
 
-    accountOwner = createAccountOwner();
-    ({
-      proxy: account,
-      accountFactory: simpleAccountFactory
-    } = await createAccount(ethersSigner, await accountOwner.getAddress()))
+    const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+    simpleAccountFactory = await accountFactoryFactory.deploy(entryPoint.address)
+    await simpleAccountFactory.deployed()
+
+    accountOwner = createAccountOwner()
+
+    const createdAccount = await createAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner.getAddress())
+    account = createdAccount.account
     await fund(account)
 
     // sanity: validate helper functions
@@ -107,20 +115,25 @@ describe('EntryPoint', function () {
       sender: account.address
     }, accountOwner, entryPoint)
 
+    const chainId = getVeChainChainId()
     expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(await entryPoint.getUserOpHash(sampleOp))
   })
 
   describe('Stake Management', () => {
     describe('with deposit', () => {
       let address2: string
+      let entryPoint: EntryPoint
       const signer2 = ethers.provider.getSigner(2)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
-      const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
       const DEPOSIT = 1000
+
+      before(() => {
+        entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
+      })
 
       beforeEach(async function () {
         // Approve transfer from signer to Entrypoint and deposit
-        await vtho.approve(config.entryPointAddress, DEPOSIT)
+        await vtho.approve(entryPointAddress, DEPOSIT)
         address2 = await signer2.getAddress()
       })
 
@@ -145,7 +158,7 @@ describe('EntryPoint', function () {
         })
 
         // Check updated allowance
-        expect(await vtho.allowance(address2, config.entryPointAddress)).to.eql(0)
+        expect(await vtho.allowance(address2, entryPointAddress)).to.eql(0)
       })
 
       it('should transfer partial approved amount into EntryPoint', async () => {
@@ -164,12 +177,12 @@ describe('EntryPoint', function () {
         })
 
         // Check updated allowance
-        expect(await vtho.allowance(address2, config.entryPointAddress)).to.eql(ONE)
+        expect(await vtho.allowance(address2, entryPointAddress)).to.eql(ONE)
       })
 
       it('should fail to transfer more than approved amount into EntryPoint', async () => {
         // Check transferring more than the amount fails
-        expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith('amount to deposit > allowance')
+        await expect(entryPoint.depositAmountTo(address2, DEPOSIT + 1)).to.revertedWith('amount to deposit > allowance')
       })
 
       it('should fail to withdraw larger amount than available', async () => {
@@ -188,19 +201,22 @@ describe('EntryPoint', function () {
     })
 
     describe('without stake', () => {
+      let entryPoint: EntryPoint
       const signer3 = ethers.provider.getSigner(3)
-      const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer3)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer3)
+      before(() => {
+        entryPoint = EntryPoint__factory.connect(entryPointAddress, signer3)
+      })
       it('should fail to stake without approved amount', async () => {
-        await vtho.approve(config.entryPointAddress, 0)
+        await vtho.approve(entryPointAddress, 0)
         await expect(entryPoint.addStake(0)).to.revertedWith('amount to stake == 0')
       })
       it('should fail to stake more than approved amount', async () => {
-        await vtho.approve(config.entryPointAddress, 100)
+        await vtho.approve(entryPointAddress, 100)
         await expect(entryPoint.addStakeAmount(0, 101)).to.revertedWith('amount to stake > allowance')
       })
       it('should fail to stake without delay', async () => {
-        await vtho.approve(config.entryPointAddress, 100)
+        await vtho.approve(entryPointAddress, 100)
         await expect(entryPoint.addStake(0)).to.revertedWith('must specify unstake delay')
         await expect(entryPoint.addStakeAmount(0, 100)).to.revertedWith('must specify unstake delay')
       })
@@ -210,15 +226,17 @@ describe('EntryPoint', function () {
     })
 
     describe('with stake', () => {
-      const UNSTAKE_DELAY_SEC = 60
+      let entryPoint: EntryPoint
       let address4: string
+
+      const UNSTAKE_DELAY_SEC = 60
       const signer4 = ethers.provider.getSigner(4)
-      const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer4)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer4)
 
       before(async () => {
+        entryPoint = EntryPoint__factory.connect(entryPointAddress, signer4)
         address4 = await signer4.getAddress()
-        await vtho.approve(config.entryPointAddress, 2000)
+        await vtho.approve(entryPointAddress, 2000)
         await entryPoint.addStake(UNSTAKE_DELAY_SEC)
       })
       it('should report "staked" state', async () => {
@@ -233,7 +251,7 @@ describe('EntryPoint', function () {
 
       it('should succeed to stake again', async () => {
         const { stake } = await entryPoint.getDepositInfo(address4)
-        await vtho.approve(config.entryPointAddress, 1000)
+        await vtho.approve(entryPointAddress, 1000)
         await entryPoint.addStake(UNSTAKE_DELAY_SEC)
         const { stake: stakeAfter } = await entryPoint.getDepositInfo(address4)
         expect(stakeAfter).to.eq(stake.add(1000))
@@ -275,7 +293,7 @@ describe('EntryPoint', function () {
             await expect(entryPoint.unlockStake()).to.revertedWith('already unstaking')
           })
           it('adding stake should reset "unlockStake"', async () => {
-            await vtho.approve(config.entryPointAddress, 1000)
+            await vtho.approve(entryPointAddress, 1000)
             await entryPoint.addStake(UNSTAKE_DELAY_SEC)
             const { stake, staked, unstakeDelaySec, withdrawTime } = await entryPoint.getDepositInfo(address4)
             expect({ staked, unstakeDelaySec, withdrawTime }).to.eql({
@@ -308,12 +326,13 @@ describe('EntryPoint', function () {
       })
     })
     describe('with deposit', () => {
+      let account: SimpleAccount
+      let entryPoint: EntryPoint
+      let address5: string
       const signer5 = ethers.provider.getSigner(5)
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer5)
-      const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer5)
-      let account: SimpleAccount
-      let address5: string
       before(async () => {
+        entryPoint = EntryPoint__factory.connect(entryPointAddress, signer5)
         address5 = await signer5.getAddress()
         await account.addDeposit(ONE_ETH)
         expect(await getBalance(account.address)).to.equal(0)
@@ -324,15 +343,16 @@ describe('EntryPoint', function () {
 
   describe('#simulateValidation', () => {
     const accountOwner1 = createAccountOwner()
+    let entryPoint: EntryPoint
     let account1: SimpleAccount
     let address2: string
     const signer2 = ethers.provider.getSigner(2)
     const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
     const DEPOSIT = 1000
 
     before(async () => {
-      ({ proxy: account1 } = await createAccount(ethersSigner, await accountOwner1.getAddress()))
+      entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
+      const { proxy: account1 } = await createAccount(ethersSigner, await accountOwner1.getAddress())
 
       await fund(account1)
 
@@ -527,9 +547,13 @@ describe('EntryPoint', function () {
   })
 
   describe('#simulateHandleOp', () => {
+    let entryPoint: EntryPoint
     let address2: string
     const signer2 = ethers.provider.getSigner(2)
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
+
+    before(() => {
+      entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
+    })
 
     it('should simulate execution', async () => {
       const accountOwner1 = createAccountOwner()
@@ -561,8 +585,8 @@ describe('EntryPoint', function () {
   })
 
   describe('flickering account validation', () => {
+    let entryPoint: EntryPoint
     const signer2 = ethers.provider.getSigner(2)
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
 
     // NaN
     // it('should prevent leakage of basefee', async () => {
@@ -610,6 +634,10 @@ describe('EntryPoint', function () {
     //     expect(e.message).to.include('Revert after first validation')
     //   }
     // })
+
+    before(() => {
+      entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
+    })
 
     it('should limit revert reason length before emitting it', async () => {
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
@@ -702,7 +730,7 @@ describe('EntryPoint', function () {
 
   describe('2d nonces', () => {
     const signer2 = ethers.provider.getSigner(2)
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
+    let entryPoint: EntryPoint
 
     const beneficiaryAddress = createRandomAddress()
     let sender: string
@@ -710,6 +738,7 @@ describe('EntryPoint', function () {
     const keyShifted = BigNumber.from(key).shl(64)
 
     before(async () => {
+      entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
       const { proxy } = await createRandomAccount(ethersSigner, accountOwner.address)
       sender = proxy.address
       await fund(sender)
@@ -774,9 +803,14 @@ describe('EntryPoint', function () {
   })
 
   describe('without paymaster (account pays in eth)', () => {
+    let entryPoint: EntryPoint
     const signer2 = ethers.provider.getSigner(2)
     const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
-    const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
+
+    before(() => {
+      entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
+    })
+
     describe('#handleOps', () => {
       let counter: TestCounter
       let accountExecFromEntryPoint: PopulatedTransaction
