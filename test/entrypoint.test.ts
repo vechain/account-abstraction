@@ -307,7 +307,7 @@ describe('EntryPoint', function () {
           it('should succeed to withdraw', async () => {
             await entryPoint.unlockStake().catch(e => console.log(e.message))
 
-            // wait 65 seconds
+            // wait 2 minutes
             await new Promise(r => setTimeout(r, 120000))
 
             const { stake } = await entryPoint.getDepositInfo(address4)
