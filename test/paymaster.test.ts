@@ -250,7 +250,8 @@ describe('EntryPoint with paymaster', function () {
 
         before(async function () {
           this.timeout(200000)
-          const { account: account2 } = await createAccountFromFactory(factory, ethersSigner, await accountOwner.getAddress())
+          const accountFromFactory = await createAccountFromFactory(factory, ethersSigner, await accountOwner.getAddress())
+          account2 = accountFromFactory.account
           await paymaster.mintTokens(account2.address, parseEther('1'))
           await paymaster.mintTokens(account.address, parseEther('1'))
           approveCallData = paymaster.interface.encodeFunctionData('approve', [account.address, ethers.constants.MaxUint256])
