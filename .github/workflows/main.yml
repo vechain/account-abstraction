@@ -13,7 +13,7 @@ jobs:
   call-workflow-hardhat-tests:
     uses: ./.github/workflows/test-contracts.yml
     with:
-      shard-matrix: "{ \"shard\": [1,2] }"
+      shard-matrix: "{ \"shard\": [1,2,3] }"
     secrets: inherit
 
 

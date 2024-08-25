@@ -16,6 +16,7 @@
     "test:compose:v2": "docker compose up -d thor-solo && sleep 10 && npx hardhat test --network vechain; ret=$?; docker compose down; exit $ret",
     "test:shard1:compose:v2": "docker compose up -d thor-solo && sleep 10 && shard='1' npx hardhat test --network vechain; ret=$?; docker compose down; exit $ret",
     "test:shard2:compose:v2": "docker compose up -d thor-solo && sleep 10 && shard='2' npx hardhat test --network vechain; ret=$?; docker compose down; exit $ret",
+    "test:shard3:compose:v2": "docker compose up -d thor-solo && sleep 10 && shard='3' npx hardhat test --network vechain; ret=$?; docker compose down; exit $ret",
     "coverage": "COVERAGE=1 hardhat coverage",
     "deploy": "./scripts/hh-wrapper deploy",
     "test-dev": "hardhat test --network dev",
