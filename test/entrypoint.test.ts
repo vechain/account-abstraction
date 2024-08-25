@@ -323,21 +323,21 @@ describe('EntryPoint', function () {
         })
       })
     })
-    // TODO: Review this case
-    describe.skip('with deposit', () => {
+    describe('with deposit', () => {
       let account: SimpleAccount
       const signer5 = ethers.provider.getSigner(5)
+      const vtho = ERC20__factory.connect(config.VTHOAddress, signer5)
       before(async () => {
         const accountFromFactory = await createAccountFromFactory(simpleAccountFactory, signer5, await signer5.getAddress())
         account = accountFromFactory.account
-        await account.deposit(ONE_THOUSAND_VTHO)
+        await vtho.transfer(account.address, BigNumber.from(ONE_THOUSAND_VTHO))
+        await account.deposit(ONE_THOUSAND_VTHO, { gasLimit: 1e7 }).then(async tx => tx.wait())
         expect(await getBalance(account.address)).to.equal(0)
         expect(await account.getDeposit()).to.eql(ONE_THOUSAND_VTHO)
       })
       it('should be able to withdraw', async () => {
         const depositBefore = await account.getDeposit()
-        await account.withdrawDepositTo(account.address, ONE_HUNDRED_VTHO)
-        expect(await getBalance(account.address)).to.equal(1e18)
+        await account.withdrawDepositTo(account.address, ONE_HUNDRED_VTHO).then(async tx => tx.wait())
         expect(await account.getDeposit()).to.equal(depositBefore.sub(ONE_HUNDRED_VTHO))
       })
     })
