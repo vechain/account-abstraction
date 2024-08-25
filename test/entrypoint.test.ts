@@ -1145,31 +1145,11 @@ describe('EntryPoint', function () {
       })
 
       it('should reject if account already created', async function () {
-        const salt = 20
-        const preAddr = await getAccountAddress(accountOwner.address, simpleAccountFactory, salt)
+        const preAddr = await getAccountAddress(accountOwner.address, simpleAccountFactory)
 
-        await fund(preAddr) // send VET
-        await fundVtho(preAddr, entryPoint) // send VTHO
-
-        createOp = await fillAndSign({
-          initCode: getAccountInitCode(accountOwner.address, simpleAccountFactory, salt),
-          callGasLimit: 1e6,
-          verificationGasLimit: 2e6
-
-        }, accountOwner, entryPoint)
-
-        // If account already exists don't deploy it
-        if (await ethers.provider.getCode(preAddr).then(x => x.length) !== 2) {
-          await entryPoint.handleOps([createOp], beneficiaryAddress, {
-            gasLimit: 1e7
-          })
+        if (await ethers.provider.getCode(preAddr).then(x => x.length) === 2) {
+          this.skip()
         }
-
-        createOp = await fillAndSign({
-          initCode: getAccountInitCode(accountOwner.address, simpleAccountFactory, salt),
-          callGasLimit: 1e6,
-          verificationGasLimit: 2e6
-        }, accountOwner, entryPoint)
 
         await expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
@@ -1241,12 +1221,6 @@ describe('EntryPoint', function () {
       it('should execute', async () => {
         expect(await counter.counters(account1)).equal(1)
         expect(await counter.counters(account2.address)).equal(1)
-      })
-      it.skip('should pay for tx', async () => {
-        // const cost1 = prebalance1.sub(await ethers.provider.getBalance(account1))
-        // const cost2 = prebalance2.sub(await ethers.provider.getBalance(account2.address))
-        // console.log('cost1=', cost1)
-        // console.log('cost2=', cost2)
       })
     })
 
