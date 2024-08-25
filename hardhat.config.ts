@@ -9,6 +9,8 @@ import { VECHAIN_URL_SOLO } from '@vechain/hardhat-vechain'
 import '@vechain/hardhat-ethers'
 import '@vechain/hardhat-web3'
 
+const shardNumber = process.env.shard
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
@@ -25,6 +27,11 @@ const config: HardhatUserConfig = {
     vechain: {
       url: VECHAIN_URL_SOLO
     }
+  },
+  paths: {
+    tests: shardNumber !== undefined && shardNumber !== null && shardNumber !== ''
+      ? `./test/shard${shardNumber}`
+      : './test'
   },
   mocha: {
     timeout: 180000

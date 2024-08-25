@@ -24,16 +24,16 @@ import {
   TestSignatureAggregator,
   TestSignatureAggregator__factory,
   TestWarmColdAccount__factory
-} from '../typechain'
+} from '../../typechain'
 import {
   DefaultsForUserOp,
   fillAndSign,
   getUserOpHash
-} from './UserOp'
-import { UserOperation } from './UserOperation'
-import { debugTracers } from './_debugTx'
-import './aa.init'
-import config from './config'
+} from '../UserOp'
+import { UserOperation } from '../UserOperation'
+import { debugTracers } from '../_debugTx'
+import '../aa.init'
+import config from '../config'
 import {
   AddressZero,
   HashZero,
@@ -57,7 +57,7 @@ import {
   simulationResultCatch,
   simulationResultWithAggregationCatch,
   tostr
-} from './testutils'
+} from '../testutils'
 
 const TestCounterT = artifacts.require('TestCounter')
 const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator')

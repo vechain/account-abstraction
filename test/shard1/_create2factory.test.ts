@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { artifacts, contract, ethers } from 'hardhat'
-import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory } from '../typechain'
+import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory } from '../../typechain'
 
 const EntryPointArtifact = artifacts.require('EntryPoint')
 const SimpleAccountFactoryArtifact = artifacts.require('SimpleAccountFactory')

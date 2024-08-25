@@ -10,7 +10,7 @@ import {
   TestCounter,
   TestCounter__factory,
   TestUtil
-} from '../typechain'
+} from '../../typechain'
 import {
   HashZero,
   ONE_ETH,
@@ -20,9 +20,9 @@ import {
   getBalance,
   getVeChainChainId,
   isDeployed
-} from './testutils'
-import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from './UserOp'
-import { UserOperation } from './UserOperation'
+} from '../testutils'
+import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../UserOp'
+import { UserOperation } from '../UserOperation'
 
 const SimpleAccountT = artifacts.require('SimpleAccount')
 

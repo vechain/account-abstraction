@@ -2,9 +2,9 @@ import { expect } from 'chai'
 import { BigNumber } from 'ethers'
 import { hexlify } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
-import { TestHelpers } from '../typechain'
-import './aa.init'
-import { AddressZero } from './testutils'
+import { TestHelpers } from '../../typechain'
+import '../aa.init'
+import { AddressZero } from '../testutils'
 
 describe('Helpers', function () {
   function pack (addr: string, validUntil: number, validAfter: number): BigNumber {

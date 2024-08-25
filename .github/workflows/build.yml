@@ -1,12 +1,12 @@
 name: Build and tests
 on:
-  pull_request:
+  push:
     branches:
-      - vechain
+      - fix/18-hh-tests
 
 jobs:
-  install-and-run-hh-tests:
-    name: Test Smart Contracts with Hardhat
+  common-steps:
+    name: Install dependencies
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -33,8 +33,33 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
-    
+
+  run-shard1:
+    name: Run shard 1 of tests
+    runs-on: ubuntu-latest
+    needs: common-steps
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: read
+
+    steps:
       - name: Smart contract tests
-        run: yarn test:compose:v2
+        run: yarn test:shard1:compose:v2
+
+  run-shard2:
+    name: Run shard 2 of tests
+    runs-on: ubuntu-latest
+    needs: common-steps
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: read
+
+    steps:
+      - name: Smart contract tests
+        run: yarn test:shard2:compose:v2
 
 
