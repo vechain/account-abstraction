@@ -41,7 +41,7 @@ jobs:
         run: yarn install
     
       - name: Smart contract tests
-        run: yarn test:shard${{ matrix.shard }}:compose:v1
+        run: yarn test:shard${{ matrix.shard }}:compose:v2
 
 
 
