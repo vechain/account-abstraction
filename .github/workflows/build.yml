@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Smart contract tests
-        run: yarn test:shard1:compose:v2
+        run: cd .. && yarn test:shard1:compose:v2
 
   run-shard2:
     name: Run shard 2 of tests
@@ -60,6 +60,6 @@ jobs:
 
     steps:
       - name: Smart contract tests
-        run: yarn test:shard2:compose:v2
+        run: cd .. && yarn test:shard2:compose:v2
 
 
