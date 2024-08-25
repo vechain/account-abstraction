@@ -285,8 +285,7 @@ describe('EntryPoint', function () {
         })
         describe('after unstake delay', () => {
           before(async () => {
-            // wait 61 seconds
-            await new Promise(r => setTimeout(r, 60000))
+            await new Promise(resolve => setTimeout(resolve, 60000))
           })
           it('should fail to unlock again', async () => {
             await expect(entryPoint.unlockStake()).to.revertedWith('already unstaking')
@@ -307,7 +306,7 @@ describe('EntryPoint', function () {
             await entryPoint.unlockStake().catch(e => console.log(e.message))
 
             // wait 2 minutes
-            await new Promise(r => setTimeout(r, 120000))
+            await new Promise((resolve) => setTimeout(resolve, 120000))
 
             const { stake } = await entryPoint.getDepositInfo(address4)
             const addr1 = createRandomAddress()
@@ -1019,7 +1018,7 @@ describe('EntryPoint', function () {
         }, accountOwner, entryPoint)
         const beneficiaryAddress = createAddress()
 
-        const rcpt = await entryPoint.handleOps([op], beneficiaryAddress, {
+        await entryPoint.handleOps([op], beneficiaryAddress, {
           maxFeePerGas: 1e9,
           gasLimit: 1e7
         }).then(async t => await t.wait())
@@ -1184,7 +1183,7 @@ describe('EntryPoint', function () {
 
         const salt = getRandomInt(1, 2147483648)
 
-        account1 = await getAccountAddress(accountOwner1.address, simpleAccountFactory, salt);
+        account1 = await getAccountAddress(accountOwner1.address, simpleAccountFactory, salt)
         const accountFromFactory = await createRandomAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner2.getAddress())
         account2 = accountFromFactory.account
 
@@ -1347,7 +1346,7 @@ describe('EntryPoint', function () {
           signature: '0x'
         }]
         const rcpt = await entryPoint.handleAggregatedOps(aggInfos, beneficiaryAddress, { gasLimit: 3e6 }).then(async ret => ret.wait())
-        const events = rcpt.events?.map((ev: Event) => {
+        const events = rcpt.events?.map((ev: any) => {
           if (ev.event === 'UserOperationEvent') {
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             return `userOp(${ev.args?.sender})`
@@ -1362,6 +1361,7 @@ describe('EntryPoint', function () {
           `agg(${aggregator.address})`,
           `userOp(${userOp1.sender})`,
           `userOp(${userOp2.sender})`,
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `agg(${aggregator3.address})`,
           `userOp(${userOp_agg3.sender})`,
           `agg(${AddressZero})`,
@@ -1401,7 +1401,7 @@ describe('EntryPoint', function () {
           })
           it('simulateValidation should return aggregator and its stake', async () => {
             await vtho.approve(aggregator.address, TWO_ETH)
-            const tx = await aggregator.addStake(entryPoint.address, 3, TWO_ETH, { gasLimit: 1e7 })
+            await aggregator.addStake(entryPoint.address, 3, TWO_ETH, { gasLimit: 1e7 })
             const { aggregatorInfo } = await entryPoint.callStatic.simulateValidation(userOp).catch(simulationResultWithAggregationCatch)
             expect(aggregatorInfo.aggregator).to.equal(aggregator.address)
             expect(aggregatorInfo.stakeInfo.stake).to.equal(TWO_ETH)
@@ -1481,7 +1481,7 @@ describe('EntryPoint', function () {
         }, account2Owner, entryPoint)
         const beneficiaryAddress = createRandomAddress()
 
-        const rcpt = await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 }).then(async t => t.wait())
+        await entryPoint.handleOps([op], beneficiaryAddress, { gasLimit: 1e7 }).then(async t => t.wait())
 
         // const { actualGasCost } = await calcGasUsage(rcpt, entryPoint, beneficiaryAddress)
         const balanceAfter = await entryPoint.balanceOf(paymaster.address)
@@ -1564,8 +1564,7 @@ describe('EntryPoint', function () {
         let paymaster: TestExpirePaymaster
         let now: number
         before('init account with session key', async function () {
-          // this.timeout(20000)
-          await new Promise(r => setTimeout(r, 20000))
+          await new Promise((resolve) => setTimeout(resolve, 20000))
           // Deploy Paymaster
           const paymasterContract = await TestExpirePaymasterT.new(entryPoint.address)
           paymaster = TestExpirePaymaster__factory.connect(paymasterContract.address, ethersSigner)
