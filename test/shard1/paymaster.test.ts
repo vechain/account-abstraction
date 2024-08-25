@@ -12,7 +12,7 @@ import {
   TokenPaymaster,
   TokenPaymaster__factory
 } from '../../typechain'
-import config from '../config'
+import config from '../utils/config'
 import {
   AddressZero,
   calcGasUsage,
@@ -26,9 +26,9 @@ import {
   getTokenBalance,
   ONE_ETH,
   rethrow
-} from '../testutils'
-import { fillAndSign } from '../UserOp'
-import { UserOperation } from '../UserOperation'
+} from '../utils/testutils'
+import { fillAndSign } from '../utils/UserOp'
+import { UserOperation } from '../utils/UserOperation'
 
 const TokenPaymasterT = artifacts.require('TokenPaymaster')
 const TestCounterT = artifacts.require('TestCounter')

@@ -6,7 +6,7 @@ import {
   SimpleAccount,
   SimpleAccountFactory,
   SimpleAccount__factory, TestAggregatedAccountFactory
-} from '../typechain'
+} from '../../typechain'
 import config from './config'
 
 import { BytesLike } from '@ethersproject/bytes'

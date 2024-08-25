@@ -3,8 +3,8 @@ import { BigNumber } from 'ethers'
 import { hexlify } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
 import { TestHelpers } from '../../typechain'
-import '../aa.init'
-import { AddressZero } from '../testutils'
+import '../utils/aa.init'
+import { AddressZero } from '../utils/testutils'
 
 describe('Helpers', function () {
   function pack (addr: string, validUntil: number, validAfter: number): BigNumber {

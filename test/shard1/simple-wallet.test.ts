@@ -20,9 +20,9 @@ import {
   getBalance,
   getVeChainChainId,
   isDeployed
-} from '../testutils'
-import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../UserOp'
-import { UserOperation } from '../UserOperation'
+} from '../utils/testutils'
+import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../utils/UserOp'
+import { UserOperation } from '../utils/UserOperation'
 
 const SimpleAccountT = artifacts.require('SimpleAccount')
 

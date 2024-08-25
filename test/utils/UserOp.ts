@@ -6,10 +6,10 @@ import {
   hexDataSlice,
   keccak256
 } from 'ethers/lib/utils'
-import { Create2Factory } from '../src/Create2Factory'
+import { Create2Factory } from '../../src/Create2Factory'
 import {
   EntryPoint
-} from '../typechain'
+} from '../../typechain'
 import { AddressZero, callDataCost, getVeChainChainId, rethrow } from './testutils'
 import { UserOperation } from './UserOperation'
 

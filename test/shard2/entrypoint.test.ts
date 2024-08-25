@@ -29,11 +29,11 @@ import {
   DefaultsForUserOp,
   fillAndSign,
   getUserOpHash
-} from '../UserOp'
-import { UserOperation } from '../UserOperation'
-import { debugTracers } from '../_debugTx'
-import '../aa.init'
-import config from '../config'
+} from '../utils/UserOp'
+import { UserOperation } from '../utils/UserOperation'
+import { debugTracers } from '../utils/_debugTx'
+import '../utils/aa.init'
+import config from '../utils/config'
 import {
   AddressZero,
   HashZero,
@@ -57,7 +57,7 @@ import {
   simulationResultCatch,
   simulationResultWithAggregationCatch,
   tostr
-} from '../testutils'
+} from '../utils/testutils'
 
 const TestCounterT = artifacts.require('TestCounter')
 const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator')
