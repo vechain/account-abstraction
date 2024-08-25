@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat'
+import { VECHAIN_URL_SOLO } from '@vechain/hardhat-vechain'
 
 export interface DebugLog {
   pc: number
@@ -16,11 +16,18 @@ export interface DebugTransactionResult {
   structLogs: DebugLog[]
 }
 
-export async function debugTransaction (txHash: string, disableMemory = true, disableStorage = true): Promise<DebugTransactionResult> {
-  const debugTx = async (hash: string): Promise<DebugTransactionResult> => await ethers.provider.send('debug_traceTransaction', [hash, {
-    disableMemory,
-    disableStorage
-  }])
+export async function debugTracers (blockHash: string, txHash: string, clauseNumber?: number, url?: string): Promise<DebugTransactionResult> {
+  const result = await fetch(`${url ?? VECHAIN_URL_SOLO}/debug/tracers`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: '',
+      target: `${blockHash}/${txHash}/${clauseNumber ?? 0}`
+    })
+  })
 
-  return await debugTx(txHash)
+  return result.json()
 }

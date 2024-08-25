@@ -31,7 +31,7 @@ import {
   getUserOpHash
 } from './UserOp'
 import { UserOperation } from './UserOperation'
-import { debugTransaction } from './_debugTx'
+import { debugTracers } from './_debugTx'
 import './aa.init'
 import config from './config'
 import {
@@ -545,7 +545,7 @@ describe('EntryPoint', function () {
       await entryPoint.simulateValidation(op1, { gasLimit: 1e7 }).catch(e => e)
       const block = await ethers.provider.getBlock('latest')
       const hash = block.transactions[0]
-      await checkForBannedOps(hash, false)
+      await checkForBannedOps(block.hash, hash, false)
     })
   })
 
@@ -950,7 +950,7 @@ describe('EntryPoint', function () {
           gasLimit: 1e7
         }).then(async t => await t.wait())
 
-        const ops = await debugTransaction(rcpt.transactionHash).then(tx => tx.structLogs.map(op => op.op))
+        const ops = await debugTracers(rcpt.blockHash, rcpt.transactionHash).then(tx => tx.structLogs.map(op => op.op))
         expect(ops).to.include('GAS')
         expect(ops).to.not.include('BASEFEE')
       })
@@ -1149,10 +1149,7 @@ describe('EntryPoint', function () {
         const preAddr = await getAccountAddress(accountOwner.address, simpleAccountFactory, salt)
 
         await fund(preAddr) // send VET
-        await vtho.transfer(preAddr, BigNumber.from(ONE_HUNDRED_VTHO)) // send VTHO
-        // Fund preAddr through EntryPoint
-        await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
-        await entryPoint.depositAmountTo(preAddr, BigNumber.from(ONE_HUNDRED_VTHO))
+        await fundVtho(preAddr, entryPoint) // send VTHO
 
         createOp = await fillAndSign({
           initCode: getAccountInitCode(accountOwner.address, simpleAccountFactory, salt),

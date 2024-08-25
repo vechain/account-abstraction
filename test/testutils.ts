@@ -20,7 +20,7 @@ import {
   parseEther
 } from 'ethers/lib/utils'
 import { ethers } from 'hardhat'
-import { debugTransaction } from './_debugTx'
+import { debugTracers, debugTransaction } from './_debugTx'
 import { UserOperation } from './UserOperation'
 
 export async function createAccountFromFactory (
@@ -273,13 +273,13 @@ export function objdump (obj: { [key: string]: any }): any {
     }), {})
 }
 
-export async function checkForBannedOps (txHash: string, checkPaymaster: boolean): Promise<void> {
-  const tx = await debugTransaction(txHash)
+export async function checkForBannedOps (blockHash: string, txHash: string, checkPaymaster: boolean): Promise<void> {
+  const tx = await debugTracers(blockHash, txHash)
   const logs = tx.structLogs
-  const blockHash = logs.map((op, index) => ({ op: op.op, index })).filter(op => op.op === 'NUMBER')
-  expect(blockHash.length).to.equal(2, 'expected exactly 2 call to NUMBER (Just before and after validateUserOperation)')
-  const validateAccountOps = logs.slice(0, blockHash[0].index - 1)
-  const validatePaymasterOps = logs.slice(blockHash[0].index + 1)
+  const numberOps = logs.map((op, index) => ({ op: op.op, index })).filter(op => op.op === 'NUMBER')
+  expect(numberOps.length).to.equal(2, 'expected exactly 2 call to NUMBER (Just before and after validateUserOperation)')
+  const validateAccountOps = logs.slice(0, numberOps[0].index - 1)
+  const validatePaymasterOps = logs.slice(numberOps[0].index + 1)
   const ops = validateAccountOps.filter(log => log.depth > 1).map(log => log.op)
   const paymasterOps = validatePaymasterOps.filter(log => log.depth > 1).map(log => log.op)
 
