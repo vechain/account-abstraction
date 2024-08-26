@@ -174,8 +174,8 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
   }
   if (op1.maxFeePerGas == null) {
     if (provider == null) throw new Error('must have entryPoint to autofill maxFeePerGas')
-    // 8 would be what represents baseFeePerGas in Ethereum
-    op1.maxFeePerGas = BigNumber.from(op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas).add(8)
+    // In VeChain there is no gas fee
+    op1.maxFeePerGas = BigNumber.from(op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas)
   }
   // TODO: this is exactly what fillUserOp below should do - but it doesn't.
   // adding this manually
