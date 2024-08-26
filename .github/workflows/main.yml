@@ -5,6 +5,9 @@ on:
   pull_request:
     branches:
       - vechain
+  push:
+    branches:
+      - fix/18-hh-tests
 
 jobs:
   call-workflow-hardhat-tests:

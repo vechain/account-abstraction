@@ -506,10 +506,10 @@ describe('EntryPoint', function () {
       await fund(op1.sender)
       await fundVtho(op1.sender, entryPoint)
 
-      await entryPoint.simulateValidation(op1, { gasLimit: 1e7 }).then(async tx => tx.wait()).catch(e => e)
-      const block = await ethers.provider.getBlock('latest')
-      const hash = block.transactions[0]
-      await checkForBannedOps(block.hash, hash, false)
+      const transaction = await entryPoint.simulateValidation(op1, { gasLimit: 1e7 })
+      transaction.wait().catch(e => e.errorArgs)
+      const blockHash = transaction.blockHash ?? (await ethers.provider.getBlock('latest')).hash
+      await checkForBannedOps(blockHash, transaction.hash, false)
     })
   })
 
