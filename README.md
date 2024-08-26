@@ -7,7 +7,7 @@ This project is based on [eth-infinistism v0.6.0 implementation](https://github.
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## VeChain Specific Changes
-The changes mainly concern VTHO support, as the gas unit that is refunded.
+The changes mainly concern VTHO support, as the gas unit that is prefunded.
 
 ## Test using Thor Solo
 
