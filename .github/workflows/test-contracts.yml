@@ -11,13 +11,13 @@ jobs:
   run-tests-and-build-report:
     name: Test Smart Contracts with Hardhat
     runs-on: ubuntu-latest
-    continue-on-error: true
     permissions:
       actions: read
       contents: read
       security-events: write
       packages: read
     strategy:
+      fail-fast: false
       matrix: ${{ fromJSON(inputs.shard-matrix) }}
 
     steps:
