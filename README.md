@@ -2,7 +2,7 @@
 
 Implementation of contracts for [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337) account abstraction via alternative mempool.
 
-This project is based on [eth-infinistism v0.6.0 implementation](https://github.com/eth-infinitism/account-abstraction/tree/abff2aca61a8f0934e533d0d352978055fddbd96).
+This project is based on [eth-infinitism v0.6.0 implementation](https://github.com/eth-infinitism/account-abstraction/tree/abff2aca61a8f0934e533d0d352978055fddbd96).
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
