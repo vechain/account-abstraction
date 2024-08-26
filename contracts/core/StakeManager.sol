@@ -101,7 +101,6 @@ abstract contract StakeManager is IStakeManager {
     /// Deposit a fixed amount of VTHO approved by the sender, to the specified account
     function depositAmountTo(address account, uint256 amount) external {
         uint256 allowance = VTHO_TOKEN_CONTRACT.allowance(msg.sender, address(this));
-        require(allowance > 0, "allowance is 0");
         require(amount <= allowance, "amount to deposit > allowance");
         _depositAmountTo(account, amount);
     }
