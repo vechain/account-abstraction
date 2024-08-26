@@ -496,7 +496,7 @@ describe('EntryPoint', function () {
       expect(error.message).to.match(/initCode failed or OOG/, error)
     })
 
-    it.only('should not use banned ops during simulateValidation', async () => {
+    it('should not use banned ops during simulateValidation', async () => {
       const salt = getRandomInt(1, 2147483648)
       const op1 = await fillAndSign({
         initCode: getAccountInitCode(accountOwner1.address, simpleAccountFactory, salt),
