@@ -139,7 +139,7 @@ export async function fundVtho (contractOrAddress: string | Contract, entryPoint
 }
 
 export async function calcGasUsage (rcpt: ContractReceipt, entryPoint: EntryPoint, beneficiaryAddress?: string): Promise<{ actualGasCost: BigNumberish }> {
-  const actualGas = await rcpt.gasUsed
+  const actualGas = rcpt.gasUsed
   const logs = await entryPoint.queryFilter(entryPoint.filters.UserOperationEvent(), rcpt.blockHash)
   const { actualGasCost, actualGasUsed } = logs[0].args
   console.log('\t== actual gasUsed (from tx receipt)=', actualGas.toString())

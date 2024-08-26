@@ -18,6 +18,7 @@ import config from '../utils/config'
 import {
   AddressZero,
   calcGasUsage,
+  checkForBannedOps,
   createAccountFromFactory,
   createAccountOwner,
   createAddress,
@@ -163,9 +164,10 @@ describe('EntryPoint with paymaster', function () {
         await paymaster.mintTokens(preAddr, parseEther('1')).then(async tx => tx.wait())
         // paymaster is the token, so no need for "approve" or any init function...
 
-        await entryPoint.simulateValidation(createOp, { gasLimit: 5e6 }).catch(e => e.message)
-        // const [tx] = await ethers.provider.getBlock('latest').then(block => block.transactions)
-        // await checkForBannedOps(tx, true)
+        const transaction = await entryPoint.simulateValidation(createOp, { gasLimit: 1e7 })
+        transaction.wait().catch(e => e.errorArgs)
+        const blockHash = transaction.blockHash ?? (await ethers.provider.getBlock('latest')).hash
+        await checkForBannedOps(blockHash, transaction.hash, true)
 
         const rcpt = await entryPoint.handleOps([createOp], beneficiaryAddress, { gasLimit: 1e7 }).then(async tx => tx.wait())
         console.log('\t== create gasUsed=', rcpt.gasUsed.toString())
