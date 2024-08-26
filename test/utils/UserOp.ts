@@ -174,7 +174,7 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
   }
   if (op1.maxFeePerGas == null) {
     if (provider == null) throw new Error('must have entryPoint to autofill maxFeePerGas')
-    // In VeChain there is no gas fee
+    // In VeChain there is no base gas fee
     op1.maxFeePerGas = BigNumber.from(op1.maxPriorityFeePerGas ?? DefaultsForUserOp.maxPriorityFeePerGas)
   }
   // TODO: this is exactly what fillUserOp below should do - but it doesn't.
