@@ -374,6 +374,8 @@ describe('EntryPoint', function () {
         }, accountOwner, entryPoint)
         const beneficiaryAddress = createAddress()
 
+        await fundVtho(account.address, entryPoint)
+
         const countBefore = await counter.counters(account.address)
         // for estimateGas, must specify maxFeePerGas, otherwise our gas check fails
         console.log('  == est gas=', await entryPoint.estimateGas.handleOps([op], beneficiaryAddress, { maxFeePerGas: 1e9 }).then(tostr))
