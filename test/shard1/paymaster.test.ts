@@ -5,9 +5,11 @@ import { hexConcat, parseEther } from 'ethers/lib/utils'
 import { artifacts, ethers } from 'hardhat'
 import {
   EntryPoint,
+  EntryPoint__factory,
   ERC20__factory,
   SimpleAccount,
   SimpleAccountFactory,
+  SimpleAccountFactory__factory,
   TestCounter__factory,
   TokenPaymaster,
   TokenPaymaster__factory
@@ -16,7 +18,6 @@ import config from '../utils/config'
 import {
   AddressZero,
   calcGasUsage,
-  checkForGeth,
   createAccountFromFactory,
   createAccountOwner,
   createAddress,
@@ -52,15 +53,17 @@ describe('EntryPoint with paymaster', function () {
 
   before(async function () {
     this.timeout(200000)
-    await checkForGeth()
 
-    // Requires pre-deployment of entryPoint and Factory
-    const entryPointFactory = await ethers.getContractFactory('EntryPoint')
-    entryPoint = await entryPointFactory.deploy()
-
-    const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
-    factory = await accountFactoryFactory.deploy(entryPoint.address)
-    await factory.deployed()
+    if (process.env.NETWORK !== null && process.env.NETWORK !== undefined && process.env.NETWORK !== '') {
+      entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
+      factory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
+    } else {
+      const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+      entryPoint = await entryPointFactory.deploy()
+      const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+      factory = await accountFactoryFactory.deploy(entryPoint.address)
+      await factory.deployed()
+    }
 
     accountOwner = createAccountOwner()
 

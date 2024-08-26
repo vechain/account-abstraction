@@ -11,6 +11,7 @@ import {
   TestCounter__factory,
   TestUtil
 } from '../../typechain'
+import config from '../utils/config'
 import {
   HashZero,
   ONE_ETH,
@@ -34,11 +35,16 @@ describe('SimpleAccount', function () {
   const ethersSigner = ethers.provider.getSigner()
 
   before(async function () {
-    const entryPointFactory = await ethers.getContractFactory('EntryPoint')
-    const entryPoint = await entryPointFactory.deploy()
-    const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
-    simpleAccountFactory = await accountFactoryFactory.deploy(entryPoint.address)
-    await simpleAccountFactory.deployed()
+    if (process.env.NETWORK !== null && process.env.NETWORK !== undefined && process.env.NETWORK !== '') {
+      simpleAccountFactory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
+    } else {
+      const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+      const entryPoint = await entryPointFactory.deploy()
+      const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+      simpleAccountFactory = await accountFactoryFactory.deploy(entryPoint.address)
+      await simpleAccountFactory.deployed()
+    }
+
     accounts = await ethers.provider.listAccounts()
     // ignore in geth.. this is just a sanity test. should be refactored to use a single-account mode..
     if (accounts.length < 2) this.skip()

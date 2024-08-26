@@ -9,6 +9,7 @@ import {
   EntryPoint__factory,
   SimpleAccount,
   SimpleAccountFactory,
+  SimpleAccountFactory__factory,
   TestCounter__factory
 } from '../../typechain'
 import {
@@ -60,13 +61,20 @@ describe('EntryPoint', function () {
   let account: SimpleAccount
 
   before(async function () {
-    const entryPointFactory = await ethers.getContractFactory('EntryPoint')
-    const entryPoint = await entryPointFactory.deploy()
-    entryPointAddress = entryPoint.address
+    let entryPoint
+    if (process.env.NETWORK !== null && process.env.NETWORK !== undefined && process.env.NETWORK !== '') {
+      entryPoint = EntryPoint__factory.connect(config.entryPointAddress, ethers.provider.getSigner())
+      entryPointAddress = entryPoint.address
+      simpleAccountFactory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
+    } else {
+      const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+      entryPoint = await entryPointFactory.deploy()
+      entryPointAddress = entryPoint.address
 
-    const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
-    simpleAccountFactory = await accountFactoryFactory.deploy(entryPoint.address)
-    await simpleAccountFactory.deployed()
+      const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+      simpleAccountFactory = await accountFactoryFactory.deploy(entryPoint.address)
+      await simpleAccountFactory.deployed()
+    }
 
     accountOwner = createAccountOwner()
 

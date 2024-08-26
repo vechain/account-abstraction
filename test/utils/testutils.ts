@@ -237,28 +237,6 @@ export function decodeRevertReason (data: string, nullIfNoMatch = true): string 
   return null
 }
 
-let currentNode: string = ''
-
-// basic geth support
-// - by default, has a single account. our code needs more.
-export async function checkForGeth (): Promise<void> {
-  // @ts-ignore
-  const provider = ethers.provider._hardhatProvider
-
-  currentNode = await provider.request({ method: 'web3_clientVersion' })
-
-  // NOTE: must run geth with params:
-  // --http.api personal,eth,net,web3
-  // --allow-insecure-unlock
-  if (currentNode.match(/geth/i) != null) {
-    for (let i = 0; i < 2; i++) {
-      const acc = await provider.request({ method: 'personal_newAccount', params: ['pass'] }).catch(rethrow)
-      await provider.request({ method: 'personal_unlockAccount', params: [acc, 'pass'] }).catch(rethrow)
-      await fund(acc, '10')
-    }
-  }
-}
-
 // remove "array" members, convert values to strings.
 // so Result obj like
 // { '0': "a", '1': 20, first: "a", second: 20 }

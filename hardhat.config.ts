@@ -5,7 +5,7 @@ import 'hardhat-deploy'
 import '@nomiclabs/hardhat-etherscan'
 
 import '@nomiclabs/hardhat-truffle5'
-import { VECHAIN_URL_SOLO } from '@vechain/hardhat-vechain'
+import { VECHAIN_URL_MAINNET, VECHAIN_URL_SOLO, VECHAIN_URL_TESTNET } from '@vechain/hardhat-vechain'
 import '@vechain/hardhat-ethers'
 import '@vechain/hardhat-web3'
 
@@ -26,6 +26,12 @@ const config: HardhatUserConfig = {
   networks: {
     vechain: {
       url: VECHAIN_URL_SOLO
+    },
+    vechain_testnet: {
+      url: VECHAIN_URL_TESTNET
+    },
+    vechain_mainnet: {
+      url: VECHAIN_URL_MAINNET
     }
   },
   paths: {
