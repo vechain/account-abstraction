@@ -32,9 +32,9 @@ import {
   getUserOpHash
 } from '../utils/UserOp'
 import { UserOperation } from '../utils/UserOperation'
-import { debugTracers } from '../utils/_debugTx'
 import '../utils/aa.init'
 import config from '../utils/config'
+import { debugTracers } from '../utils/debugTx'
 import {
   AddressZero,
   HashZero,
