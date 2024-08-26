@@ -74,7 +74,7 @@ yarn hardhat test --network vechain_mainnet shard1/deploy-contracts.test.ts
 
 ### Run tests on a network
 
-Update [./test/config.ts](./test/config.ts) with the addresses of the deployed contracts and then for testnet:
+Update [./test/utils/config.ts](./test/utils/config.ts) with the addresses of the deployed contracts and then for testnet:
 
 ```bash
 yarn test:testnet
