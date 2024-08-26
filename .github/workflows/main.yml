@@ -1,0 +1,17 @@
+name: Account Abstraction workflow
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - vechain
+
+jobs:
+  call-workflow-hardhat-tests:
+    uses: ./.github/workflows/test-contracts.yml
+    with:
+      shard-matrix: "{ \"shard\": [1,2,3] }"
+    secrets: inherit
+
+
+

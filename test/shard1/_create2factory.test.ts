@@ -1,26 +1,22 @@
 import { expect } from 'chai'
-import { ethers } from 'hardhat'
-import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory, TestUtil } from '../typechain'
+import { artifacts, contract, ethers } from 'hardhat'
+import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory } from '../../typechain'
 
-const TestUtil = artifacts.require('TestUtil')
-const EntryPoint = artifacts.require('EntryPoint')
-const SimpleAccountFactory = artifacts.require('SimpleAccountFactory')
-const { expect } = require('chai')
+const EntryPointArtifact = artifacts.require('EntryPoint')
+const SimpleAccountFactoryArtifact = artifacts.require('SimpleAccountFactory')
 
-contract('Deployments', function (accounts) {
-  let testUtils: TestUtil
+contract('Factory', function (accounts) {
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
   const provider = ethers.provider
 
   beforeEach('deploy all', async function () {
-    testUtils = await TestUtil.new({ from: accounts[0] })
-    entryPoint = await EntryPoint.new({ from: accounts[0] })
-    simpleAccountFactory = await SimpleAccountFactory.new(entryPoint.address, { from: accounts[0] })
+    entryPoint = await EntryPointArtifact.new({ from: accounts[0] })
+    simpleAccountFactory = await SimpleAccountFactoryArtifact.new(entryPoint.address, { from: accounts[0] })
   })
 
   it('should deploy to known address', async () => {
-    const factory = await SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
+    const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
     const simpleAccountAddress = await factory.getAddress(await ethers.provider.getSigner().getAddress(), 0)
 
     await factory.createAccount(await ethers.provider.getSigner().getAddress(), 0)
@@ -30,7 +26,7 @@ contract('Deployments', function (accounts) {
   })
 
   it('should deploy to different address based on salt', async () => {
-    const factory = await SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
+    const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
     const simpleAccountAddress = await factory.getAddress(await ethers.provider.getSigner().getAddress(), 123)
 
     await factory.createAccount(await ethers.provider.getSigner().getAddress(), 123)

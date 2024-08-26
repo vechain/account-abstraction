@@ -43,13 +43,13 @@ contract SimpleAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, In
     function deposit(uint256 amount) public {
         _onlyOwner();
         require(VTHO_TOKEN_CONTRACT.approve(address(_entryPoint), amount), "Aproval to EntryPoint Failed");
-        _entryPoint.depositAmountTo(address(this), amount);
+        entryPoint().depositAmountTo(address(this), amount);
     }
 
     function withdrawAll() public {
         _onlyOwner();
         IStakeManager.DepositInfo memory depositInfo = _entryPoint.getDepositInfo(address(this));
-        _entryPoint.withdrawTo(address(this), depositInfo.deposit);
+        entryPoint().withdrawTo(address(this), depositInfo.deposit);
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -121,18 +121,25 @@ contract SimpleAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, In
         }
     }
 
-    function _authorizeUpgrade(address newImplementation) internal view override {
-        (newImplementation);
-        _onlyOwner();
+    /**
+     * check current account deposit in the entryPoint
+     */
+    function getDeposit() public view returns (uint256) {
+        return entryPoint().balanceOf(address(this));
     }
 
-            /**
+    /**
      * withdraw value from the account's deposit
      * @param withdrawAddress target to send to
      * @param amount to withdraw
      */
     function withdrawDepositTo(address payable withdrawAddress, uint256 amount) public onlyOwner {
         entryPoint().withdrawTo(withdrawAddress, amount);
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal view override {
+        (newImplementation);
+        _onlyOwner();
     }
 }
 

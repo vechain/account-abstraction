@@ -1,48 +1,56 @@
-import config from './config'
 import {
   ERC20__factory,
   EntryPoint,
-  EntryPoint__factory,
-  SimpleAccountFactory,
-  SimpleAccountFactory__factory
-  ,
   IERC20,
   IEntryPoint,
   SimpleAccount,
+  SimpleAccountFactory,
   SimpleAccount__factory, TestAggregatedAccountFactory
-} from '../typechain'
+} from '../../typechain'
+import config from './config'
 
-import { ethers } from 'hardhat'
+import { BytesLike } from '@ethersproject/bytes'
+import { expect } from 'chai'
+import { randomInt } from 'crypto'
+import { BigNumber, BigNumberish, Contract, ContractReceipt, Signer, Wallet } from 'ethers'
 import {
   arrayify,
   hexConcat,
   keccak256,
   parseEther
 } from 'ethers/lib/utils'
-import { BigNumber, BigNumberish, Contract, ContractReceipt, Signer, Wallet } from 'ethers'
-import { BytesLike } from '@ethersproject/bytes'
-import { expect } from 'chai'
-import { debugTransaction } from './_debugTx'
+import { ethers } from 'hardhat'
+import { debugTracers } from './debugTx'
 import { UserOperation } from './UserOperation'
-import { randomInt } from 'crypto'
 
-export async function createAccount (
+export async function createAccountFromFactory (
+  accountFactory: SimpleAccountFactory,
+  ethersSigner: Signer,
+  accountOwner: string,
+  salt = 0
+): Promise<{
+    account: SimpleAccount
+    accountFactory: SimpleAccountFactory
+  }> {
+  await accountFactory.createAccount(accountOwner, salt)
+  const accountAddress = await accountFactory.getAddress(accountOwner, salt)
+  const account = SimpleAccount__factory.connect(accountAddress, ethersSigner)
+  return {
+    account,
+    accountFactory
+  }
+}
+
+export async function createRandomAccountFromFactory (
+  accountFactory: SimpleAccountFactory,
   ethersSigner: Signer,
   accountOwner: string
 ): Promise<{
-    proxy: SimpleAccount
+    account: SimpleAccount
     accountFactory: SimpleAccountFactory
   }> {
-  const accountFactory = new SimpleAccountFactory__factory()
-    .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner)
-  await accountFactory.createAccount(accountOwner, 0)
-  const accountAddress = await accountFactory.getAddress(accountOwner, 0)
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
-  return {
-    accountFactory,
-    proxy
-  }
+  const salt = seed++
+  return createAccountFromFactory(accountFactory, ethersSigner, accountOwner, salt)
 }
 
 export const AddressZero = ethers.constants.AddressZero
@@ -53,7 +61,6 @@ export const FIVE_ETH = parseEther('5')
 
 const signer2 = ethers.provider.getSigner(2)
 const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
-const entryPoint = EntryPoint__factory.connect(config.entryPointAddress, signer2)
 
 export const tostr = (x: any): string => x != null ? x.toString() : 'null'
 
@@ -117,7 +124,7 @@ export function callDataCost (data: string): number {
     .reduce((sum, x) => sum + x)
 }
 
-export async function fundVtho (contractOrAddress: string | Contract, ONE_HUNDERD_VTHO = '100000000000000000000'): Promise<void> {
+export async function fundVtho (contractOrAddress: string | Contract, entryPoint: EntryPoint, vthoAmount = '100000000000000000000'): Promise<void> {
   let address: string
   if (typeof contractOrAddress === 'string') {
     address = contractOrAddress
@@ -125,15 +132,15 @@ export async function fundVtho (contractOrAddress: string | Contract, ONE_HUNDER
     address = contractOrAddress.address
   }
 
-  await vtho.transfer(address, BigNumber.from(ONE_HUNDERD_VTHO)) // send VTHO
+  await vtho.transfer(address, BigNumber.from(vthoAmount)) // send VTHO
   // Fund preAddr through EntryPoint
-  await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDERD_VTHO))
-  await entryPoint.depositAmountTo(address, BigNumber.from(ONE_HUNDERD_VTHO))
+  await vtho.approve(entryPoint.address, BigNumber.from(vthoAmount))
+  await entryPoint.depositAmountTo(address, BigNumber.from(vthoAmount))
 }
 
 export async function calcGasUsage (rcpt: ContractReceipt, entryPoint: EntryPoint, beneficiaryAddress?: string): Promise<{ actualGasCost: BigNumberish }> {
-  const actualGas = await rcpt.gasUsed
-  const logs = await entryPoint.queryFilter(entryPoint.filters.UserOperationEvent(), rcpt.blockHash)
+  const actualGas = rcpt.gasUsed
+  const logs = await entryPoint.queryFilter(entryPoint.filters.UserOperationEvent())
   const { actualGasCost, actualGasUsed } = logs[0].args
   console.log('\t== actual gasUsed (from tx receipt)=', actualGas.toString())
   console.log('\t== calculated gasUsed (paid to beneficiary)=', actualGasUsed)
@@ -230,29 +237,6 @@ export function decodeRevertReason (data: string, nullIfNoMatch = true): string 
   return null
 }
 
-let currentNode: string = ''
-
-// basic geth support
-// - by default, has a single account. our code needs more.
-export async function checkForGeth (): Promise<void> {
-  // @ts-ignore
-  const provider = ethers.provider._hardhatProvider
-
-  currentNode = await provider.request({ method: 'web3_clientVersion' })
-
-  console.log('node version:', currentNode)
-  // NOTE: must run geth with params:
-  // --http.api personal,eth,net,web3
-  // --allow-insecure-unlock
-  if (currentNode.match(/geth/i) != null) {
-    for (let i = 0; i < 2; i++) {
-      const acc = await provider.request({ method: 'personal_newAccount', params: ['pass'] }).catch(rethrow)
-      await provider.request({ method: 'personal_unlockAccount', params: [acc, 'pass'] }).catch(rethrow)
-      await fund(acc, '10')
-    }
-  }
-}
-
 // remove "array" members, convert values to strings.
 // so Result obj like
 // { '0': "a", '1': 20, first: "a", second: 20 }
@@ -267,13 +251,13 @@ export function objdump (obj: { [key: string]: any }): any {
     }), {})
 }
 
-export async function checkForBannedOps (txHash: string, checkPaymaster: boolean): Promise<void> {
-  const tx = await debugTransaction(txHash)
+export async function checkForBannedOps (blockHash: string, txHash: string, checkPaymaster: boolean): Promise<void> {
+  const tx = await debugTracers(blockHash, txHash)
   const logs = tx.structLogs
-  const blockHash = logs.map((op, index) => ({ op: op.op, index })).filter(op => op.op === 'NUMBER')
-  expect(blockHash.length).to.equal(2, 'expected exactly 2 call to NUMBER (Just before and after validateUserOperation)')
-  const validateAccountOps = logs.slice(0, blockHash[0].index - 1)
-  const validatePaymasterOps = logs.slice(blockHash[0].index + 1)
+  const numberOps = logs.map((op, index) => ({ op: op.op, index })).filter(op => op.op === 'NUMBER')
+  expect(numberOps.length).to.equal(2, 'expected exactly 2 call to NUMBER (Just before and after validateUserOperation)')
+  const validateAccountOps = logs.slice(0, numberOps[0].index - 1)
+  const validatePaymasterOps = logs.slice(numberOps[0].index + 1)
   const ops = validateAccountOps.filter(log => log.depth > 1).map(log => log.op)
   const paymasterOps = validatePaymasterOps.filter(log => log.depth > 1).map(log => log.op)
 
@@ -330,22 +314,9 @@ export function userOpsWithoutAgg (userOps: UserOperation[]): IEntryPoint.UserOp
   }]
 }
 
-export async function createRandomAccount (
-  ethersSigner: Signer,
-  accountOwner: string
-): Promise<{
-    proxy: SimpleAccount
-    accountFactory: SimpleAccountFactory
-  }> {
-  const accountFactory = new SimpleAccountFactory__factory()
-    .attach(config.simpleAccountFactoryAddress)
-    .connect(ethersSigner)
-  const salt = seed++
-  await accountFactory.createAccount(accountOwner, salt)
-  const accountAddress = await accountFactory.getAddress(accountOwner, salt)
-  const proxy = SimpleAccount__factory.connect(accountAddress, ethersSigner)
-  return {
-    accountFactory,
-    proxy
+export async function getVeChainChainId (): Promise<BigNumber> {
+  if (process.env.NETWORK !== null && process.env.NETWORK !== undefined && process.env.NETWORK !== '') {
+    return ethers.provider.send('eth_chainId', [])
   }
+  return BigNumber.from('0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6')
 }

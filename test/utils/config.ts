@@ -1,3 +1,5 @@
+// Some of these addresses do not actually belong to the contracts they are named after, they are meant to be replaced
+
 const config = {
   VTHOAddress: '0x0000000000000000000000000000456E65726779',
   testUtilAddress: '0x06b35287803bE5D21dc52FC77E651912cCabdF89',

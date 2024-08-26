@@ -1,15 +1,12 @@
-import './aa.init'
-import { BigNumber } from 'ethers'
-import { AddressZero } from './testutils'
 import { expect } from 'chai'
+import { BigNumber } from 'ethers'
 import { hexlify } from 'ethers/lib/utils'
-import { TestHelpers, TestHelpers__factory } from '../typechain'
 import { ethers } from 'hardhat'
+import { TestHelpers } from '../../typechain'
+import '../utils/aa.init'
+import { AddressZero } from '../utils/testutils'
 
-const provider = ethers.provider
-const ethersSigner = provider.getSigner()
-
-describe('#ValidationData helpers', function () {
+describe('Helpers', function () {
   function pack (addr: string, validUntil: number, validAfter: number): BigNumber {
     return BigNumber.from(BigNumber.from(addr))
       .add(BigNumber.from(validUntil).mul(BigNumber.from(2).pow(160)))
@@ -22,7 +19,8 @@ describe('#ValidationData helpers', function () {
   const max48 = 2 ** 48 - 1
 
   before(async () => {
-    helpers = await new TestHelpers__factory(ethersSigner).deploy()
+    const helpersFactory = await ethers.getContractFactory('TestHelpers')
+    helpers = await helpersFactory.deploy()
   })
 
   it('#parseValidationData', async () => {
