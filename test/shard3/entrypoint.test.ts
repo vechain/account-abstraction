@@ -354,6 +354,8 @@ describe('EntryPoint', function () {
         // wallet-reported signature failure should revert in handleOps
         const wrongOwner = createAccountOwner()
 
+        await fundVtho(account.address, entryPoint)
+
         // Fund wrong owner
         await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
         await entryPoint.depositAmountTo(wrongOwner.address, BigNumber.from(ONE_HUNDRED_VTHO))
