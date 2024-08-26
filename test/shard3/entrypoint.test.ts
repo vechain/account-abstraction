@@ -191,6 +191,7 @@ describe('EntryPoint', function () {
         sender: testRevertAccount.address,
         callGasLimit: 1e5,
         maxFeePerGas: 1,
+        maxPriorityFeePerGas: 1,
         nonce: await entryPoint.getNonce(testRevertAccount.address, 0),
         verificationGasLimit: 1e6,
         callData: badData.data!
