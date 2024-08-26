@@ -32,7 +32,7 @@ If you need to find out first which one is your version, please execute (V1 woul
 docker-compose version 1.29.2, build 5becea4c
 ```
 
-The test files are included in separate folders (`shard1`, `shard2`...) so we can parallelise the execution in the pipelines.
+The test files are placed in separate folders (`shard1`, `shard2`...) so we can parallelise the execution in the pipelines.
 
 ## Test on networks
 

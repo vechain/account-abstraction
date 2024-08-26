@@ -194,8 +194,7 @@ export async function fillUserOp (op: Partial<UserOperation>, entryPoint?: Entry
 export async function fillAndSign (op: Partial<UserOperation>, signer: Wallet | Signer, entryPoint?: EntryPoint, getNonceFunction = 'getNonce'): Promise<UserOperation> {
   const op2 = await fillUserOp(op, entryPoint, getNonceFunction)
 
-  // chainId from Thor Solo
-  const chainId = getVeChainChainId()
+  const chainId = await getVeChainChainId()
 
   if (signer instanceof Wallet) {
     return signUserOp(op2, signer, entryPoint!.address, chainId)

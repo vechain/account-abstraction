@@ -128,7 +128,7 @@ describe('SimpleAccount', function () {
       const callGasLimit = 200000
       const verificationGasLimit = 100000
       const maxFeePerGas = 3e9
-      const chainId = getVeChainChainId()
+      const chainId = await getVeChainChainId()
 
       userOp = signUserOp(fillUserOpDefaults({
         sender: account.address,

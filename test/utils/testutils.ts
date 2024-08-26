@@ -314,6 +314,9 @@ export function userOpsWithoutAgg (userOps: UserOperation[]): IEntryPoint.UserOp
   }]
 }
 
-export function getVeChainChainId (): BigNumber {
+export async function getVeChainChainId (): Promise<BigNumber> {
+  if (process.env.NETWORK !== null && process.env.NETWORK !== undefined && process.env.NETWORK !== '') {
+    return ethers.provider.send('eth_chainId', [])
+  }
   return BigNumber.from('0x00000000c05a20fbca2bf6ae3affba6af4a74b800b585bf7a4988aba7aea69f6')
 }

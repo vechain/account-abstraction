@@ -87,7 +87,7 @@ describe('EntryPoint', function () {
       sender: account.address
     }, accountOwner, entryPoint)
 
-    const chainId = getVeChainChainId()
+    const chainId = await getVeChainChainId()
     expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(await entryPoint.getUserOpHash(sampleOp))
   })
 
