@@ -149,7 +149,7 @@ describe('EntryPoint with paymaster', function () {
         }, accountOwner, entryPoint)
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           gasLimit: 1e7
-        }).catch(rethrow())).to.revertedWith('TokenPaymaster: no balance')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA33 reverted: TokenPaymaster: no balance (pre-create)')
       })
 
       it('should succeed to create account with tokens', async () => {
@@ -193,7 +193,7 @@ describe('EntryPoint with paymaster', function () {
         if (!created) this.skip()
         await expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
-        })).to.revertedWith('sender already constructed')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA10 sender already constructed')
       })
 
       it('batched request should each pay for its share', async function () {
