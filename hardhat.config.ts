@@ -4,7 +4,6 @@ import { HardhatUserConfig } from 'hardhat/config'
 import 'hardhat-deploy'
 import '@nomiclabs/hardhat-etherscan'
 
-import '@nomiclabs/hardhat-truffle5'
 import { VECHAIN_URL_MAINNET, VECHAIN_URL_SOLO, VECHAIN_URL_TESTNET } from '@vechain/hardhat-vechain'
 import '@vechain/hardhat-ethers'
 import '@vechain/hardhat-web3'
