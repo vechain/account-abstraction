@@ -76,8 +76,7 @@
     "ethereumjs-util": "^7.1.0",
     "ethereumjs-wallet": "^1.0.1",
     "hardhat-deploy": "^0.11.23",
-    "hardhat-deploy-ethers": "^0.3.0-beta.11",
-    "table": "^6.8.0"
+    "hardhat-deploy-ethers": "^0.3.0-beta.11"
   },
   "resolutions": {
     "@vechain/web3-providers-connex": "1.0.0",
