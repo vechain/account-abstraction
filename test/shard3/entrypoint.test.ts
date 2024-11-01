@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { toChecksumAddress } from 'ethereumjs-util'
 import { BigNumber, PopulatedTransaction, Wallet } from 'ethers/lib/ethers'
 import { BytesLike, arrayify, defaultAbiCoder, hexConcat, hexZeroPad, parseEther } from 'ethers/lib/utils'
-import { artifacts, ethers } from 'hardhat'
+import { ethers } from 'hardhat'
 import {
   ERC20__factory,
   EntryPoint,
@@ -59,15 +59,6 @@ import {
   tostr
 } from '../utils/testutils'
 
-const TestCounterT = artifacts.require('TestCounter')
-const TestSignatureAggregatorT = artifacts.require('TestSignatureAggregator')
-const TestAggregatedAccountT = artifacts.require('TestAggregatedAccount')
-const TestExpiryAccountT = artifacts.require('TestExpiryAccount')
-const TestPaymasterAcceptAllT = artifacts.require('TestPaymasterAcceptAll')
-const TestExpirePaymasterT = artifacts.require('TestExpirePaymaster')
-const TestRevertAccountT = artifacts.require('TestRevertAccount')
-const TestAggregatedAccountFactoryT = artifacts.require('TestAggregatedAccountFactory')
-const TestWarmColdAccountT = artifacts.require('TestWarmColdAccount')
 const ONE_HUNDRED_VTHO = '100000000000000000000'
 const ONE_THOUSAND_VTHO = '1000000000000000000000'
 
@@ -183,7 +174,8 @@ describe('EntryPoint', function () {
       const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
       const revertLength = 1e5
       const REVERT_REASON_MAX_LEN = 2048
-      const testRevertAccountContract = await TestRevertAccountT.new(entryPoint.address, { value: parseEther('1') })
+      const testRevertAccountFactory = await ethers.getContractFactory('TestRevertAccount')
+      const testRevertAccountContract = await testRevertAccountFactory.deploy(entryPoint.address, { value: parseEther('1') })
       const testRevertAccount = TestRevertAccount__factory.connect(testRevertAccountContract.address, ethersSigner)
       const badData = await testRevertAccount.populateTransaction.revertLong(revertLength + 1)
       const badOp: UserOperation = {
@@ -213,7 +205,8 @@ describe('EntryPoint', function () {
       const TOUCH_GET_AGGREGATOR = 1
       const TOUCH_PAYMASTER = 2
       it('should prevent detection through getAggregator()', async () => {
-        const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address, { value: parseEther('1') })
+        const testWarmColdAccountFactory = await ethers.getContractFactory('TestWarmColdAccount')
+        const testWarmColdAccountContract = await testWarmColdAccountFactory.deploy(entryPoint.address, { value: parseEther('1') })
         const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner)
         const badOp: UserOperation = {
           ...DefaultsForUserOp,
@@ -234,12 +227,14 @@ describe('EntryPoint', function () {
       })
 
       it('should prevent detection through paymaster.code.length', async () => {
-        const testWarmColdAccountContract = await TestWarmColdAccountT.new(entryPoint.address, { value: parseEther('1') })
+        const testWarmColdAccountFactory = await ethers.getContractFactory('TestWarmColdAccount')
+        const testWarmColdAccountContract = await testWarmColdAccountFactory.deploy(entryPoint.address, { value: parseEther('1') })
         const testWarmColdAccount = TestWarmColdAccount__factory.connect(testWarmColdAccountContract.address, ethersSigner)
 
         await fundVtho(testWarmColdAccountContract.address, entryPoint)
 
-        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const testPaymasterAcceptAllFactory = await ethers.getContractFactory('TestPaymasterAcceptAll')
+        const paymasterContract = await testPaymasterAcceptAllFactory.deploy(entryPoint.address)
         const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
 
         await fundVtho(paymaster.address, entryPoint)
@@ -353,7 +348,8 @@ describe('EntryPoint', function () {
       let counter: TestCounter
       let accountExecFromEntryPoint: PopulatedTransaction
       before(async () => {
-        const testCounterContract = await TestCounterT.new()
+        const testCounterFactory = await ethers.getContractFactory('TestCounter')
+        const testCounterContract = await testCounterFactory.deploy()
         counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
@@ -721,7 +717,8 @@ describe('EntryPoint', function () {
       let account2: SimpleAccount
 
       before(async () => {
-        const testCounterContract = await TestCounterT.new()
+        const testCounterFactory = await ethers.getContractFactory('TestCounter')
+        const testCounterContract = await testCounterFactory.deploy()
         counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecCounterFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
@@ -775,15 +772,14 @@ describe('EntryPoint', function () {
       let aggAccount2: TestAggregatedAccount
 
       before(async () => {
-        const aggregatorContract = await TestSignatureAggregatorT.new()
+        const testSignatureAggregatorFactory = await ethers.getContractFactory('TestSignatureAggregator')
+        const aggregatorContract = await testSignatureAggregatorFactory.deploy()
         const signer2 = ethers.provider.getSigner(2)
         aggregator = TestSignatureAggregator__factory.connect(aggregatorContract.address, signer2)
-        // aggregator = await new TestSignatureAggregator__factory(ethersSigner).deploy()
-        // aggAccount = await new TestAggregatedAccount__factory(ethersSigner).deploy(entryPoint.address, aggregator.address)
-        const aggAccountContract = await TestAggregatedAccountT.new(entryPoint.address, aggregator.address)
+        const testAggregatedAccountFactory = await ethers.getContractFactory('TestAggregatedAccount')
+        const aggAccountContract = await testAggregatedAccountFactory.deploy(entryPoint.address, aggregator.address)
         aggAccount = TestAggregatedAccount__factory.connect(aggAccountContract.address, ethersSigner)
-        // aggAccount2 = await new TestAggregatedAccount__factory(ethersSigner).deploy(entryPoint.address, aggregator.address)
-        const aggAccount2Contract = await TestAggregatedAccountT.new(entryPoint.address, aggregator.address)
+        const aggAccount2Contract = await testAggregatedAccountFactory.deploy(entryPoint.address, aggregator.address)
         aggAccount2 = TestAggregatedAccount__factory.connect(aggAccount2Contract.address, ethersSigner)
 
         await ethersSigner.sendTransaction({ to: aggAccount.address, value: parseEther('0.1') })
@@ -804,7 +800,8 @@ describe('EntryPoint', function () {
           sender: aggAccount.address
         }, accountOwner, entryPoint)
 
-        const wrongAggregator = await TestSignatureAggregatorT.new()
+        const testSignatureAggregatorFactory = await ethers.getContractFactory('TestSignatureAggregator')
+        const wrongAggregator = await testSignatureAggregatorFactory.deploy()
         const sig = HashZero
 
         await expect(entryPoint.callStatic.handleAggregatedOps([{
@@ -817,7 +814,8 @@ describe('EntryPoint', function () {
       it('should reject non-contract (address(1)) aggregator', async () => {
         // this is just sanity check that the compiler indeed reverts on a call to "validateSignatures()" to nonexistent contracts
         const address1 = hexZeroPad('0x1', 20)
-        const aggAccount1 = await TestAggregatedAccountT.new(entryPoint.address, address1)
+        const testAggregatedAccountFactory = await ethers.getContractFactory('TestAggregatedAccount')
+        const aggAccount1 = await testAggregatedAccountFactory.deploy(entryPoint.address, address1)
 
         const userOp = await fillAndSign({
           sender: aggAccount1.address,
@@ -850,8 +848,10 @@ describe('EntryPoint', function () {
       })
 
       it('should run with multiple aggregators (and non-aggregated-accounts)', async () => {
-        const aggregator3 = await TestSignatureAggregatorT.new()
-        const aggAccount3 = await TestAggregatedAccountT.new(entryPoint.address, aggregator3.address)
+        const testSignatureAggregatorFactory = await ethers.getContractFactory('TestSignatureAggregator')
+        const aggregator3 = await testSignatureAggregatorFactory.deploy()
+        const testAggregatedAccountFactory = await ethers.getContractFactory('TestAggregatedAccount')
+        const aggAccount3 = await testAggregatedAccountFactory.deploy(entryPoint.address, aggregator3.address)
         await ethersSigner.sendTransaction({ to: aggAccount3.address, value: parseEther('0.1') })
 
         await fundVtho(aggAccount3.address, entryPoint)
@@ -934,7 +934,8 @@ describe('EntryPoint', function () {
           let addr: string
           let userOp: UserOperation
           before(async () => {
-            const factoryContract = await TestAggregatedAccountFactoryT.new(entryPoint.address, aggregator.address)
+            const testAggregatedAccountFactory = await ethers.getContractFactory('TestAggregatedAccount')
+            const factoryContract = await testAggregatedAccountFactory.deploy(entryPoint.address, aggregator.address)
             const factory = TestAggregatedAccountFactory__factory.connect(factoryContract.address, ethersSigner)
             initCode = await getAggregatedAccountInitCode(entryPoint.address, factory)
             addr = await entryPoint.callStatic.getSenderAddress(initCode).catch(e => e.errorArgs.sender)
@@ -973,12 +974,14 @@ describe('EntryPoint', function () {
 
       before(async () => {
         // paymaster = await new TestPaymasterAcceptAll__factory(ethersSigner).deploy(entryPoint.address)
-        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const testPaymasterAcceptAllFactory = await ethers.getContractFactory('TestPaymasterAcceptAll')
+        const paymasterContract = await testPaymasterAcceptAllFactory.deploy(entryPoint.address)
         paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
         // Approve VTHO to paymaster before adding stake
         await vtho.approve(paymasterContract.address, ONE_HUNDRED_VTHO)
         await paymaster.addStake(globalUnstakeDelaySec, paymasterStake, { gasLimit: 1e7 })
-        const counterContract = await TestCounterT.new()
+        const testCounterFactory = await ethers.getContractFactory('TestCounter')
+        const counterContract = await testCounterFactory.deploy()
         counter = TestCounter__factory.connect(counterContract.address, ethersSigner)
         const count = await counter.populateTransaction.count()
         accountExecFromEntryPoint = await account.populateTransaction.execute(counter.address, 0, count.data!)
@@ -1010,7 +1013,8 @@ describe('EntryPoint', function () {
       })
 
       it('paymaster should pay for tx', async function () {
-        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const testPaymasterAcceptAllFactory = await ethers.getContractFactory('TestPaymasterAcceptAll')
+        const paymasterContract = await testPaymasterAcceptAllFactory.deploy(entryPoint.address)
         const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
 
         await fundVtho(paymaster.address, entryPoint)
@@ -1035,7 +1039,8 @@ describe('EntryPoint', function () {
       })
       it('simulateValidation should return paymaster stake and delay', async () => {
         // await fundVtho(paymasterAddress, entryPoint);
-        const paymasterContract = await TestPaymasterAcceptAllT.new(entryPoint.address)
+        const testPaymasterAcceptAllFactory = await ethers.getContractFactory('TestPaymasterAcceptAll')
+        const paymasterContract = await testPaymasterAcceptAllFactory.deploy(entryPoint.address)
         const paymaster = TestPaymasterAcceptAll__factory.connect(paymasterContract.address, ethersSigner)
 
         const vtho = ERC20__factory.connect(config.VTHOAddress, ethersSigner)
@@ -1073,7 +1078,8 @@ describe('EntryPoint', function () {
       before('init account with session key', async () => {
         // create a test account. The primary owner is the global ethersSigner, so that we can easily add a temporaryOwner, below
         // account = await new TestExpiryAccount__factory(ethersSigner).deploy(entryPoint.address)
-        account = await TestExpiryAccountT.new(entryPoint.address)
+        const testExpiryAccountFactory = await ethers.getContractFactory('TestExpiryAccount')
+        account = await testExpiryAccountFactory.deploy(entryPoint.address)
         await account.initialize(await ethersSigner.getAddress())
         await ethersSigner.sendTransaction({ to: account.address, value: parseEther('0.1') })
         now = await ethers.provider.getBlock('latest').then(block => block.timestamp)
@@ -1111,7 +1117,8 @@ describe('EntryPoint', function () {
         before('init account with session key', async function () {
           await new Promise((resolve) => setTimeout(resolve, 20000))
           // Deploy Paymaster
-          const paymasterContract = await TestExpirePaymasterT.new(entryPoint.address)
+          const testExpirePaymasterFactory = await ethers.getContractFactory('TestExpirePaymaster')
+          const paymasterContract = await testExpirePaymasterFactory.deploy(entryPoint.address)
           paymaster = TestExpirePaymaster__factory.connect(paymasterContract.address, ethersSigner)
           // Approve VTHO to paymaster before adding stake
           await fundVtho(paymasterContract.address, entryPoint, ONE_HUNDRED_VTHO)

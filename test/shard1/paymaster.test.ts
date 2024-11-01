@@ -2,7 +2,7 @@ import { hexValue } from '@ethersproject/bytes'
 import { expect } from 'chai'
 import { BigNumber, Wallet } from 'ethers'
 import { hexConcat, parseEther } from 'ethers/lib/utils'
-import { artifacts, ethers } from 'hardhat'
+import { ethers } from 'hardhat'
 import {
   EntryPoint,
   EntryPoint__factory,
@@ -32,9 +32,6 @@ import {
 import { fillAndSign } from '../utils/UserOp'
 import { UserOperation } from '../utils/UserOperation'
 
-const TokenPaymasterT = artifacts.require('TokenPaymaster')
-const TestCounterT = artifacts.require('TestCounter')
-
 const ONE_HUNDRED_VTHO = '100000000000000000000'
 
 describe('EntryPoint with paymaster', function () {
@@ -45,7 +42,7 @@ describe('EntryPoint with paymaster', function () {
   const beneficiaryAddress = '0x'.padEnd(42, '1')
   let factory: SimpleAccountFactory
 
-  function getAccountDeployer (entryPoint: string, accountOwner: string, _salt: number = 0): string {
+  function getAccountDeployer (_entryPoint: string, accountOwner: string, _salt: number = 0): string {
     return hexConcat([
       factory.address,
       hexValue(factory.interface.encodeFunctionData('createAccount', [accountOwner, _salt])!)
@@ -80,7 +77,8 @@ describe('EntryPoint with paymaster', function () {
     let pmAddr: string
 
     before(async () => {
-      const tokenPaymaster = await TokenPaymasterT.new(factory.address, 'ttt', entryPoint.address)
+      const tokenPaymasterFactory = await ethers.getContractFactory('TokenPaymaster')
+      const tokenPaymaster = await tokenPaymasterFactory.deploy(factory.address, 'ttt', entryPoint.address)
       paymaster = TokenPaymaster__factory.connect(tokenPaymaster.address, ethersSigner)
       pmAddr = paymaster.address
       ownerAddr = await ethersSigner.getAddress()
@@ -101,7 +99,8 @@ describe('EntryPoint with paymaster', function () {
   describe('using TokenPaymaster (account pays in paymaster tokens)', () => {
     let paymaster: TokenPaymaster
     before(async () => {
-      const tokenPaymaster = await TokenPaymasterT.new(factory.address, 'tst', entryPoint.address)
+      const tokenPaymasterFactory = await ethers.getContractFactory('TokenPaymaster')
+      const tokenPaymaster = await tokenPaymasterFactory.deploy(factory.address, 'tst', entryPoint.address)
       paymaster = TokenPaymaster__factory.connect(tokenPaymaster.address, ethersSigner)
 
       const vtho = ERC20__factory.connect(config.VTHOAddress, ethers.provider.getSigner())
@@ -202,7 +201,8 @@ describe('EntryPoint with paymaster', function () {
         // (context is the account to pay with)
 
         const beneficiaryAddress = createAddress()
-        const testCounterContract = await TestCounterT.new()
+        const testCounterFactory = await ethers.getContractFactory('TestCounter')
+        const testCounterContract = await testCounterFactory.deploy()
         const testCounter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
         const justEmit = testCounter.interface.encodeFunctionData('justemit')
         const execFromSingleton = account.interface.encodeFunctionData('execute', [testCounter.address, 0, justEmit])

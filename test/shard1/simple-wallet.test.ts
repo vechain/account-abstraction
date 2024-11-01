@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { Wallet } from 'ethers'
 import { parseEther } from 'ethers/lib/utils'
-import { artifacts, ethers } from 'hardhat'
+import { ethers } from 'hardhat'
 import {
   SimpleAccount,
   SimpleAccountFactory,
@@ -24,8 +24,6 @@ import {
 } from '../utils/testutils'
 import { fillUserOpDefaults, getUserOpHash, packUserOp, signUserOp } from '../utils/UserOp'
 import { UserOperation } from '../utils/UserOperation'
-
-const SimpleAccountT = artifacts.require('SimpleAccount')
 
 describe('SimpleAccount', function () {
   let simpleAccountFactory: SimpleAccountFactory
@@ -61,7 +59,7 @@ describe('SimpleAccount', function () {
   it('other account should not be able to call transfer', async () => {
     const { account } = await createAccountFromFactory(simpleAccountFactory, ethers.provider.getSigner(), accounts[0])
     await expect(account.connect(ethers.provider.getSigner(1)).execute(accounts[2], ONE_ETH, '0x'))
-      .to.be.revertedWith('account: not Owner or EntryPoint')
+      .to.be.re('account: not Owner or EntryPoint')
   })
 
   it('should pack in js the same as solidity', async () => {
@@ -121,7 +119,8 @@ describe('SimpleAccount', function () {
       entryPointEoa = accounts[2]
       const epAsSigner = await ethers.getSigner(entryPointEoa)
 
-      const simpleAccountContract = await SimpleAccountT.new(entryPointEoa)
+      const simpleAccountFactory = await ethers.getContractFactory('SimpleAccount')
+      const simpleAccountContract = await simpleAccountFactory.deploy(entryPointEoa)
       account = SimpleAccount__factory.connect(simpleAccountContract.address, epAsSigner)
 
       await ethersSigner.sendTransaction({ from: accounts[0], to: account.address, value: parseEther('0.2') })

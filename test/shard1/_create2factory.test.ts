@@ -1,18 +1,18 @@
 import { expect } from 'chai'
-import { artifacts, contract, ethers } from 'hardhat'
+import { ethers } from 'hardhat'
 import { EntryPoint, SimpleAccountFactory, SimpleAccountFactory__factory } from '../../typechain'
 
-const EntryPointArtifact = artifacts.require('EntryPoint')
-const SimpleAccountFactoryArtifact = artifacts.require('SimpleAccountFactory')
-
-contract('Factory', function (accounts) {
+describe('Factory', function () {
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
   const provider = ethers.provider
 
   beforeEach('deploy all', async function () {
-    entryPoint = await EntryPointArtifact.new({ from: accounts[0] })
-    simpleAccountFactory = await SimpleAccountFactoryArtifact.new(entryPoint.address, { from: accounts[0] })
+    const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+    entryPoint = await entryPointFactory.deploy()
+    const accountFactoryFactory = await ethers.getContractFactory('SimpleAccountFactory')
+    simpleAccountFactory = await accountFactoryFactory.deploy(entryPoint.address)
+    await simpleAccountFactory.deployed()
   })
 
   it('should deploy to known address', async () => {

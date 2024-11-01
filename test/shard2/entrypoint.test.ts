@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import crypto from 'crypto'
 import { BigNumber, Wallet } from 'ethers/lib/ethers'
 import { hexConcat } from 'ethers/lib/utils'
-import { artifacts, ethers } from 'hardhat'
+import { ethers } from 'hardhat'
 import {
   ERC20__factory,
   EntryPoint,
@@ -36,7 +36,6 @@ import {
   simulationResultCatch
 } from '../utils/testutils'
 
-const TestCounterT = artifacts.require('TestCounter')
 const ONE_HUNDRED_VTHO = '100000000000000000000'
 const ONE_THOUSAND_VTHO = '1000000000000000000000'
 
@@ -533,7 +532,8 @@ describe('EntryPoint', function () {
       const accountOwner1 = createAccountOwner()
       const { account } = await createAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner.getAddress())
       await fund(account)
-      const testCounterContract = await TestCounterT.new()
+      const testCounterFactory = await ethers.getContractFactory('TestCounter')
+      const testCounterContract = await testCounterFactory.deploy()
       const counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
 
       const count = counter.interface.encodeFunctionData('count')
