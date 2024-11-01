@@ -288,7 +288,7 @@ describe('EntryPoint', function () {
         sender,
         nonce: keyShifted.add(1)
       }, accountOwner, entryPoint)
-      await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('AA25 invalid account nonce')
+      await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('FailedOp').withArgs(0, 'AA25 invalid account nonce')
     })
 
     describe('with key=1, seq=1', () => {
@@ -335,7 +335,7 @@ describe('EntryPoint', function () {
           sender,
           nonce: keyShifted.add(3)
         }, accountOwner, entryPoint)
-        await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('AA25 invalid account nonce')
+        await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('FailedOp').withArgs(0, 'AA25 invalid account nonce')
       })
     })
   })
@@ -373,7 +373,7 @@ describe('EntryPoint', function () {
           sender: account.address
         }, wrongOwner, entryPoint)
         const beneficiaryAddress = createAddress()
-        await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('AA24 signature error')
+        await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('FailedOp').withArgs(0, 'AA24 signature error')
       })
 
       it('account should pay for tx', async function () {
@@ -469,7 +469,7 @@ describe('EntryPoint', function () {
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           maxFeePerGas: 1e9,
           gasLimit: 12e5
-        })).to.revertedWith('AA95 out of gas')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA95 out of gas')
 
         // Make sure that the user did not pay for the transaction
         expect(await getBalance(account.address)).to.eq(inititalAccountBalance)
@@ -622,7 +622,7 @@ describe('EntryPoint', function () {
           verificationGasLimit: 1000
         }, accountOwner, entryPoint)
         await expect(entryPoint.callStatic.simulateValidation(op1))
-          .to.revertedWith('AA23 reverted (or OOG)')
+          .to.revertedWith('FailedOp').withArgs(0, 'AA23 reverted (or OOG)')
       })
     })
 
@@ -642,7 +642,7 @@ describe('EntryPoint', function () {
 
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           gasLimit: 1e7
-        })).to.revertedWith('AA14 initCode must return sender')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA14 initCode must return sender')
       })
 
       it('should reject create if account not funded', async () => {
@@ -656,7 +656,7 @@ describe('EntryPoint', function () {
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           gasLimit: 1e7,
           gasPrice: await ethers.provider.getGasPrice()
-        })).to.revertedWith('didn\'t pay prefund')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA21 didn\'t pay prefund')
 
         // await expect(await ethers.provider.getCode(op.sender).then(x => x.length)).to.equal(2, "account exists before creation")
       })
@@ -697,7 +697,7 @@ describe('EntryPoint', function () {
 
         await expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
-        })).to.revertedWith('sender already constructed')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA10 sender already constructed')
       })
     })
 
@@ -797,7 +797,7 @@ describe('EntryPoint', function () {
         }, accountOwner, entryPoint)
 
         // no aggregator is kind of "wrong aggregator"
-        await expect(entryPoint.callStatic.handleOps([userOp], beneficiaryAddress)).to.revertedWith('AA24 signature error')
+        await expect(entryPoint.callStatic.handleOps([userOp], beneficiaryAddress)).to.revertedWith('FailedOp').withArgs(0, 'AA24 signature error')
       })
       it('should fail to execute aggregated account with wrong aggregator', async () => {
         const userOp = await fillAndSign({
@@ -811,7 +811,7 @@ describe('EntryPoint', function () {
           userOps: [userOp],
           aggregator: wrongAggregator.address,
           signature: sig
-        }], beneficiaryAddress)).to.revertedWith('AA24 signature error')
+        }], beneficiaryAddress)).to.revertedWith('FailedOp').withArgs(0, 'AA24 signature error')
       })
 
       it('should reject non-contract (address(1)) aggregator', async () => {
@@ -993,7 +993,7 @@ describe('EntryPoint', function () {
           verificationGasLimit: 3e6,
           callGasLimit: 1e6
         }, account2Owner, entryPoint)
-        await expect(entryPoint.callStatic.simulateValidation(op)).to.revertedWith('"AA30 paymaster not deployed"')
+        await expect(entryPoint.callStatic.simulateValidation(op)).to.revertedWith('FailedOp').withArgs(0, 'AA30 paymaster not deployed')
       })
 
       it('should fail if paymaster has no deposit', async function () {
@@ -1006,7 +1006,7 @@ describe('EntryPoint', function () {
           callGasLimit: 1e6
         }, account2Owner, entryPoint)
         const beneficiaryAddress = createAddress()
-        await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('"AA31 paymaster deposit too low"')
+        await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress)).to.revertedWith('FailedOp').withArgs(0, 'AA31 paymaster deposit too low')
       })
 
       it('paymaster should pay for tx', async function () {
@@ -1183,7 +1183,7 @@ describe('EntryPoint', function () {
           it('handleOps should revert on expired paymaster request', async () => {
             const userOp = await createOpWithPaymasterParams(sessionOwner, now + 100, now + 200)
             await expect(entryPoint.callStatic.handleOps([userOp], beneficiary))
-              .to.revertedWith('AA22 expired or not due')
+              .to.revertedWith('FailedOp').withArgs(0, 'AA22 expired or not due')
           })
         })
       })
@@ -1198,7 +1198,7 @@ describe('EntryPoint', function () {
             sender: account.address
           }, expiredOwner, entryPoint)
           await expect(entryPoint.callStatic.handleOps([userOp], beneficiary))
-            .to.revertedWith('AA22 expired or not due')
+            .to.revertedWith('FailedOp').withArgs(0, 'AA22 expired or not due')
         })
 
         // this test passed when running it individually but fails when its run alonside the other tests
@@ -1211,7 +1211,7 @@ describe('EntryPoint', function () {
             sender: account.address
           }, futureOwner, entryPoint)
           await expect(entryPoint.callStatic.handleOps([userOp], beneficiary))
-            .to.revertedWith('AA22 expired or not due')
+            .to.revertedWith('FailedOp').withArgs(0, 'AA22 expired or not due')
         })
       })
     })

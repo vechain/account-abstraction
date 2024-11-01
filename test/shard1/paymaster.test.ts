@@ -26,8 +26,7 @@ import {
   fund,
   getAccountAddress,
   getTokenBalance,
-  ONE_ETH,
-  rethrow
+  ONE_ETH
 } from '../utils/testutils'
 import { fillAndSign } from '../utils/UserOp'
 import { UserOperation } from '../utils/UserOperation'
@@ -127,7 +126,7 @@ describe('EntryPoint with paymaster', function () {
         }, accountOwner, entryPoint)
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           gasLimit: 1e7
-        })).to.revertedWith('AA33 reverted: TokenPaymaster: no balance')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA33 reverted: TokenPaymaster: no balance')
 
         // This reverts as expected but its not reflected in the test case
         // await expect(entryPoint.handleOps([op], beneficiaryAddress, {
@@ -149,7 +148,7 @@ describe('EntryPoint with paymaster', function () {
         }, accountOwner, entryPoint)
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           gasLimit: 1e7
-        }).catch(rethrow())).to.revertedWith('TokenPaymaster: no balance')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA33 reverted: TokenPaymaster: no balance (pre-create)')
       })
 
       it('should succeed to create account with tokens', async () => {
@@ -193,7 +192,7 @@ describe('EntryPoint with paymaster', function () {
         if (!created) this.skip()
         await expect(entryPoint.callStatic.handleOps([createOp], beneficiaryAddress, {
           gasLimit: 1e7
-        }).catch(rethrow())).to.revertedWith('sender already constructed')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA10 sender already constructed')
       })
 
       it('batched request should each pay for its share', async function () {
@@ -316,7 +315,7 @@ describe('EntryPoint with paymaster', function () {
         this.timeout(20000)
         await expect(
           paymaster.withdrawStake(withdrawAddress)
-        ).to.revertedWith('must call unlockStake')
+        ).to.revertedWith('must call unlockStake() first')
       })
       it('should be able to withdraw after unstake delay', async () => {
         await paymaster.unlockStake()

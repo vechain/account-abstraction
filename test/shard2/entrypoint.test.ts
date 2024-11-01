@@ -343,7 +343,7 @@ describe('EntryPoint', function () {
       // using wrong nonce
       const op = await fillAndSign({ sender: account.address, nonce: 1234 }, accountOwner, entryPoint)
       await expect(entryPoint.callStatic.simulateValidation(op)).to
-        .revertedWith('AA25 invalid account nonce')
+        .revertedWith('FailedOp').withArgs(0, 'AA25 invalid account nonce')
     })
 
     it('should report signature failure without revert', async () => {
@@ -362,13 +362,13 @@ describe('EntryPoint', function () {
         verificationGasLimit: 1000
       }, accountOwner, entryPoint)
       await expect(entryPoint.callStatic.simulateValidation(op)).to
-        .revertedWith('AA20 account not deployed')
+        .revertedWith('FailedOp').withArgs(0, 'AA20 account not deployed')
     })
 
     it('should revert on oog if not enough verificationGas', async () => {
       const op = await fillAndSign({ sender: account.address, verificationGasLimit: 1000 }, accountOwner, entryPoint)
       await expect(entryPoint.callStatic.simulateValidation(op)).to
-        .revertedWith('AA23 reverted (or OOG)')
+        .revertedWith('FailedOp').withArgs(0, 'AA23 reverted (or OOG)')
     })
 
     it('should succeed if validateUserOp succeeds', async () => {
@@ -435,7 +435,7 @@ describe('EntryPoint', function () {
       }, accountOwner1, entryPoint)
       await expect(
         entryPoint.callStatic.simulateValidation(op)
-      ).to.revertedWith('gas values overflow')
+      ).to.revertedWith('AA94 gas values overflow')
     })
 
     it('should fail creation for wrong sender', async () => {
@@ -445,7 +445,7 @@ describe('EntryPoint', function () {
         verificationGasLimit: 3e6
       }, accountOwner1, entryPoint)
       await expect(entryPoint.callStatic.simulateValidation(op1))
-        .to.revertedWith('AA14 initCode must return sender')
+        .to.revertedWith('FailedOp').withArgs(0, 'AA14 initCode must return sender')
     })
 
     it('should report failure on insufficient verificationGas (OOG) for creation', async () => {
@@ -469,7 +469,7 @@ describe('EntryPoint', function () {
         maxFeePerGas: 0
       }, accountOwner1, entryPoint)
       await expect(entryPoint.callStatic.simulateValidation(op1, { gasLimit: 1e6 }))
-        .to.revertedWith('AA13 initCode failed or OOG')
+        .to.revertedWith('FailedOp').withArgs(0, 'AA13 initCode failed or OOG')
     })
 
     it('should succeed for creating an account', async () => {
