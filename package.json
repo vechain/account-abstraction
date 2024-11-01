@@ -36,7 +36,9 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^2.3.0",
     "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
     "@types/node": "^16.4.12",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
@@ -55,7 +57,8 @@
     "ts-generator": "^0.1.1",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.1.0",
-    "typechain": "^8.1.0"
+    "typechain": "^8.1.0",
+    "typescript": "^4.3.5"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
@@ -64,8 +67,6 @@
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/contracts": "^4.9.6",
     "@thehubbleproject/bls": "^0.5.1",
-    "@typechain/hardhat": "^2.3.0",
-    "@types/mocha": "^9.0.0",
     "@vechain/hardhat-ethers": "^0.0.4",
     "@vechain/hardhat-vechain": "^0.0.4",
     "@vechain/hardhat-web3": "^0.0.4",
@@ -76,8 +77,7 @@
     "hardhat-deploy-ethers": "^0.3.0-beta.11",
     "solidity-coverage": "^0.8.2",
     "source-map-support": "^0.5.19",
-    "table": "^6.8.0",
-    "typescript": "^4.3.5"
+    "table": "^6.8.0"
   },
   "resolutions": {
     "@vechain/web3-providers-connex": "1.0.0",

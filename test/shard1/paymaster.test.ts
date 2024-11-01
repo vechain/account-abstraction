@@ -26,8 +26,7 @@ import {
   fund,
   getAccountAddress,
   getTokenBalance,
-  ONE_ETH,
-  rethrow
+  ONE_ETH
 } from '../utils/testutils'
 import { fillAndSign } from '../utils/UserOp'
 import { UserOperation } from '../utils/UserOperation'
