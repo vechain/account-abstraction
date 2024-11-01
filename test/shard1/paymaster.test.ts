@@ -127,7 +127,7 @@ describe('EntryPoint with paymaster', function () {
         }, accountOwner, entryPoint)
         await expect(entryPoint.callStatic.handleOps([op], beneficiaryAddress, {
           gasLimit: 1e7
-        })).to.revertedWith('AA33 reverted: TokenPaymaster: no balance')
+        })).to.revertedWith('FailedOp').withArgs(0, 'AA33 reverted: TokenPaymaster: no balance')
 
         // This reverts as expected but its not reflected in the test case
         // await expect(entryPoint.handleOps([op], beneficiaryAddress, {
