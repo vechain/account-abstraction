@@ -54,6 +54,8 @@
     "ethers": "^5.4.2",
     "hardhat": "^2.6.6",
     "solhint": "^3.3.7",
+    "solidity-coverage": "^0.8.2",
+    "source-map-support": "^0.5.19",
     "ts-generator": "^0.1.1",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.1.0",
@@ -75,8 +77,6 @@
     "ethereumjs-wallet": "^1.0.1",
     "hardhat-deploy": "^0.11.23",
     "hardhat-deploy-ethers": "^0.3.0-beta.11",
-    "solidity-coverage": "^0.8.2",
-    "source-map-support": "^0.5.19",
     "table": "^6.8.0"
   },
   "resolutions": {
