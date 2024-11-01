@@ -1,4 +1,4 @@
-import '@nomicfoundation/hardhat-chai-matchers'
+import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
 import { HardhatUserConfig } from 'hardhat/config'
 import 'hardhat-deploy'
