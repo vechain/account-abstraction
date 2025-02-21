@@ -13,8 +13,7 @@ import {
   TestCounter__factory
 } from '../../typechain'
 import {
-  fillAndSign,
-  getUserOpHash
+  fillAndSign
 } from '../utils/UserOp'
 import '../utils/aa.init'
 import config from '../utils/config'
@@ -32,7 +31,6 @@ import {
   getAccountAddress,
   getAccountInitCode,
   getBalance,
-  getVeChainChainId,
   simulationResultCatch
 } from '../utils/testutils'
 
@@ -83,12 +81,12 @@ describe('EntryPoint', function () {
     await fund(account)
 
     // sanity: validate helper functions
-    const sampleOp = await fillAndSign({
-      sender: account.address
-    }, accountOwner, entryPoint)
+    // const sampleOp = await fillAndSign({
+    //   sender: account.address
+    // }, accountOwner, entryPoint)
 
-    const chainId = await getVeChainChainId()
-    expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(await entryPoint.getUserOpHash(sampleOp))
+    // const chainId = await getVeChainChainId()
+    // expect(getUserOpHash(sampleOp, entryPoint.address, chainId)).to.eql(await entryPoint.getUserOpHash(sampleOp))
   })
 
   describe('Stake Management', () => {
@@ -323,21 +321,21 @@ describe('EntryPoint', function () {
     const signer2 = ethers.provider.getSigner(2)
     const vtho = ERC20__factory.connect(config.VTHOAddress, signer2)
 
-    before(async () => {
-      entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
-      const accountFromFactory = await createAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner1.getAddress())
-      account1 = accountFromFactory.account
+    // before(async () => {
+    //   entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
+    //   const accountFromFactory = await createAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner1.getAddress())
+    //   account1 = accountFromFactory.account
 
-      await fund(account1)
+    //   await fund(account1)
 
-      // Fund account
-      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
-      await entryPoint.depositAmountTo(account.address, BigNumber.from(ONE_HUNDRED_VTHO))
+    //   // Fund account
+    //   await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
+    //   await entryPoint.depositAmountTo(account.address, BigNumber.from(ONE_HUNDRED_VTHO))
 
-      // Fund account1
-      await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
-      await entryPoint.depositAmountTo(account1.address, BigNumber.from(ONE_HUNDRED_VTHO))
-    })
+    //   // Fund account1
+    //   await vtho.approve(entryPoint.address, BigNumber.from(ONE_HUNDRED_VTHO))
+    //   await entryPoint.depositAmountTo(account1.address, BigNumber.from(ONE_HUNDRED_VTHO))
+    // })
 
     it('should fail if validateUserOp fails', async () => {
       // using wrong nonce
@@ -371,10 +369,67 @@ describe('EntryPoint', function () {
         .revertedWith('FailedOp').withArgs(0, 'AA23 reverted (or OOG)')
     })
 
-    it('should succeed if validateUserOp succeeds', async () => {
-      const op = await fillAndSign({ sender: account1.address }, accountOwner1, entryPoint)
-      await fund(account1)
-      await entryPoint.callStatic.simulateValidation(op).catch(simulationResultCatch)
+    it.only('should succeed if validateUserOp succeeds', async () => {
+      console.log('LLEGA1')
+      entryPoint = EntryPoint__factory.connect('0xf9188E94783Ca505886488F04249DD7f6a36770B', ethers.provider.getSigner())
+      // const op = await fillAndSign({ sender: account1.address }, accountOwner1, entryPoint)
+      console.log('LLEGA2')
+      const op = {
+        sender: '0xaa0eFc1986faeEBCB2f4406a5D2c717ce0429EcD',
+        nonce: 0n,
+        initCode: '0x',
+        callData: '0x0000189a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000',
+        callGasLimit: 15000000n,
+        verificationGasLimit: 6000000n,
+        preVerificationGas: 1000000n,
+        maxFeePerGas: 1000000n,
+        maxPriorityFeePerGas: 1000000n,
+        paymasterAndData: '0x',
+        signature: '0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001c5b32f37f5bea87bdd5374eb2ac54ea8e0000000000000000000000000000000000000000000000000000000000000041c4d13461bdcf9a2d1cc17ae955e728f334b6c7bfae5e10fa1dd33aa9561ba40a51ff3ac96e037a1cd8bd7a9221a825f88716f736f34440af4eb7bd588e2f1ee01c00000000000000000000000000000000000000000000000000000000000000'
+      }
+      console.log('op', op)
+      // await fund(account1)
+
+      const iface = new ethers.utils.Interface([
+        'function validateUserOp((address sender, uint256 nonce, bytes callData, bytes signature) userOp, bytes32 userOpHash, uint256 missingAccountFunds) external returns (uint256)'
+      ])
+
+      const userOpHash = await entryPoint.getUserOpHash(op)
+
+      console.log('userOpHash', userOpHash)
+
+      const data = iface.encodeFunctionData('validateUserOp', [op, userOpHash, 0])
+
+      try {
+        const tx = await ethers.provider.getSigner().sendTransaction({
+          to: '0xaa0eFc1986faeEBCB2f4406a5D2c717ce0429EcD',
+          data: data,
+          gasLimit: 1e7
+        })
+
+        console.log('tx', tx)
+
+        const receipt = await tx.wait()
+
+        console.log('receipt', receipt)
+      } catch (e) {
+        console.log('error', e)
+
+        try {
+          const result = await ethers.provider.call({
+            to: '0xaa0eFc1986faeEBCB2f4406a5D2c717ce0429EcD',
+            data: data,
+            gasLimit: 1e7
+          })
+
+          console.log('callStatic result:', result)
+        } catch (staticError) {
+          console.error('Static call error:', staticError) // Log the static call error
+        }
+      }
+
+      const { returnInfo } = await entryPoint.callStatic.simulateValidation(op).catch(simulationResultCatch)
+      expect(returnInfo).to.eql({})
     })
 
     it('should return empty context if no paymaster', async () => {

@@ -1,12 +1,12 @@
+import '@nomiclabs/hardhat-etherscan'
 import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
-import { HardhatUserConfig } from 'hardhat/config'
 import 'hardhat-deploy'
-import '@nomiclabs/hardhat-etherscan'
+import { HardhatUserConfig } from 'hardhat/config'
 
 import '@nomiclabs/hardhat-truffle5'
-import { VECHAIN_URL_MAINNET, VECHAIN_URL_SOLO, VECHAIN_URL_TESTNET } from '@vechain/hardhat-vechain'
 import '@vechain/hardhat-ethers'
+import { VECHAIN_URL_MAINNET, VECHAIN_URL_SOLO, VECHAIN_URL_TESTNET } from '@vechain/hardhat-vechain'
 import '@vechain/hardhat-web3'
 
 const shardNumber = process.env.shard
@@ -28,7 +28,15 @@ const config: HardhatUserConfig = {
       url: VECHAIN_URL_SOLO
     },
     vechain_testnet: {
-      url: VECHAIN_URL_TESTNET
+      url: VECHAIN_URL_TESTNET,
+      accounts: {
+        mnemonic:
+            'vivid any call mammal mosquito budget midnight expose spirit approve reject system',
+        path: "m/44'/818'/0'/0",
+        count: 3,
+        initialIndex: 0,
+        passphrase: 'vechainthor'
+      }
     },
     vechain_mainnet: {
       url: VECHAIN_URL_MAINNET
