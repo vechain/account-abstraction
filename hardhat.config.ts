@@ -1,6 +1,7 @@
 import '@nomiclabs/hardhat-etherscan'
 import '@nomiclabs/hardhat-waffle'
 import '@typechain/hardhat'
+import 'hardhat-dependency-compiler'
 import 'hardhat-deploy'
 import { HardhatUserConfig } from 'hardhat/config'
 
@@ -41,6 +42,9 @@ const config: HardhatUserConfig = {
     vechain_mainnet: {
       url: VECHAIN_URL_MAINNET
     }
+  },
+  dependencyCompiler: {
+    paths: ['@account-abstraction/contracts/core/EntryPoint.sol']
   },
   paths: {
     tests: shardNumber !== undefined && shardNumber !== null && shardNumber !== ''

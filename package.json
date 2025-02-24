@@ -63,6 +63,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
+    "@account-abstraction/contracts": "^0.6.0",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-truffle5": "^2.0.7",
@@ -75,6 +76,7 @@
     "@vechain/web3-providers-connex": "1.0.0",
     "ethereumjs-util": "^7.1.0",
     "ethereumjs-wallet": "^1.0.1",
+    "hardhat-dependency-compiler": "^1.1.3",
     "hardhat-deploy": "^0.11.23",
     "hardhat-deploy-ethers": "^0.3.0-beta.11"
   },
