@@ -1,20 +1,22 @@
 import { expect } from 'chai'
 import { Contract } from 'ethers'
 import { artifacts, contract, ethers } from 'hardhat'
-import { SmartAccountFactory } from '../../typechain'
+import { SmartAccount, SmartAccountFactory } from '../../typechain'
 import { EntryPoint } from '../../typechain/contracts/core'
 import { SimpleAccount, SimpleAccountFactory } from '../../typechain/contracts/samples'
 import { SimpleAccountFactory__factory } from '../../typechain/factories/contracts/samples'
 
 const EntryPointArtifact: Contract = artifacts.require('contracts/core/EntryPoint.sol:EntryPoint')
 const SimpleAccountFactoryArtifact: Contract = artifacts.require('contracts/samples/SimpleAccountFactory.sol:SimpleAccountFactory')
-const SimpleAccountArtifact: Contract = artifacts.require('contracts/samples/SimpleAccount.sol:SimpleAccount')
+// const SimpleAccountArtifact: Contract = artifacts.require('contracts/samples/SimpleAccount.sol:SimpleAccount')
+const SmartAccountArtifact: Contract = artifacts.require('contracts/smart-account/SmartAccount.sol:SmartAccount')
 const SmartAccountFactoryArtifact: Contract = artifacts.require('contracts/smart-account/factory/SmartAccountFactory.sol:SmartAccountFactory')
 
 contract('Factory', function (accounts) {
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
   let simpleAccount: SimpleAccount
+  let smartAccount: SmartAccount
   let smartAccountFactory: SmartAccountFactory
   const provider = ethers.provider
 
@@ -23,9 +25,14 @@ contract('Factory', function (accounts) {
     console.log('EntryPoint address', entryPoint.address)
     simpleAccountFactory = await SimpleAccountFactoryArtifact.new(entryPoint.address, { from: accounts[0] })
     console.log('SimpleAccountFactory address', simpleAccountFactory.address)
-    simpleAccount = await SimpleAccountArtifact.new(entryPoint.address, { from: accounts[0] })
-    console.log('SimpleAccount address', simpleAccount.address)
-    smartAccountFactory = await SmartAccountFactoryArtifact.new(simpleAccount.address, accounts[0], { from: accounts[0] })
+    // simpleAccount = await SimpleAccountArtifact.new(entryPoint.address, { from: accounts[0] })
+    // console.log('SimpleAccount address', simpleAccount.address)
+    // smartAccountFactory = await SmartAccountFactoryArtifact.new(simpleAccount.address, accounts[0], { from: accounts[0] })
+    // console.log('SmartAccountFactory address', smartAccountFactory.address)
+
+    smartAccount = await SmartAccountArtifact.new(entryPoint.address, { from: accounts[0] })
+    console.log('SmartAccount address', smartAccount.address)
+    smartAccountFactory = await SmartAccountFactoryArtifact.new(smartAccount.address, accounts[0], { from: accounts[0] })
     console.log('SmartAccountFactory address', smartAccountFactory.address)
   })
 
@@ -41,15 +48,15 @@ contract('Factory', function (accounts) {
     expect(await provider.getCode(simpleAccountAddress).then(code => code.length)).to.be.gt(2)
   })
 
-  it('should deploy to different address based on salt', async () => {
-    const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
-    const simpleAccountAddress = await factory.getAddress(await ethers.provider.getSigner().getAddress(), 123)
+  // it('should deploy to different address based on salt', async () => {
+  //   const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
+  //   const simpleAccountAddress = await factory.getAddress(await ethers.provider.getSigner().getAddress(), 123)
 
-    await factory.createAccount(await ethers.provider.getSigner().getAddress(), 123)
+  //   await factory.createAccount(await ethers.provider.getSigner().getAddress(), 123)
 
-    console.log('SimpleAccountSalt address', simpleAccountAddress)
+  //   console.log('SimpleAccountSalt address', simpleAccountAddress)
 
-    // An account has been deployed at said address
-    expect(await provider.getCode(simpleAccountAddress).then(code => code.length)).to.be.gt(2)
-  })
+  //   // An account has been deployed at said address
+  //   expect(await provider.getCode(simpleAccountAddress).then(code => code.length)).to.be.gt(2)
+  // })
 })

@@ -1,20 +1,23 @@
 import { expect } from 'chai'
 import crypto from 'crypto'
 import { BigNumber, Wallet } from 'ethers/lib/ethers'
-import { arrayify, hexConcat } from 'ethers/lib/utils'
+import { hexConcat } from 'ethers/lib/utils'
 import { artifacts, ethers } from 'hardhat'
 import {
   ERC20__factory,
-  EntryPoint,
-  EntryPoint__factory,
   SimpleAccount,
   SimpleAccountFactory,
   SimpleAccountFactory__factory,
   TestCounter__factory
 } from '../../typechain'
 import {
-  fillAndSign,
-  getUserOpHash
+  EntryPoint
+} from '../../typechain/contracts/core'
+import {
+  EntryPoint__factory
+} from '../../typechain/factories/contracts/core'
+import {
+  fillAndSign
 } from '../utils/UserOp'
 import '../utils/aa.init'
 import config from '../utils/config'
@@ -32,7 +35,6 @@ import {
   getAccountAddress,
   getAccountInitCode,
   getBalance,
-  getVeChainChainId,
   simulationResultCatch
 } from '../utils/testutils'
 
@@ -67,7 +69,7 @@ describe('EntryPoint', function () {
       entryPointAddress = entryPoint.address
       simpleAccountFactory = SimpleAccountFactory__factory.connect(config.simpleAccountFactoryAddress, ethersSigner)
     } else {
-      const entryPointFactory = await ethers.getContractFactory('EntryPoint')
+      const entryPointFactory = await ethers.getContractFactory('contracts/core/EntryPoint.sol:EntryPoint')
       entryPoint = await entryPointFactory.deploy()
       entryPointAddress = entryPoint.address
 
@@ -373,7 +375,7 @@ describe('EntryPoint', function () {
 
     it.only('should succeed if validateUserOp succeeds', async () => {
       console.log('LLEGA1')
-      entryPoint = EntryPoint__factory.connect('0x2586eefe76efcc563c2ec8c018a80cbdaf5c60c5', ethers.provider.getSigner())
+      entryPoint = EntryPoint__factory.connect('0x42Ca53f38507A5Cda5Fb536a26E5d2380fe3083c', ethers.provider.getSigner())
       // const op = await fillAndSign({ sender: account1.address }, accountOwner1, entryPoint)
       console.log('LLEGA2')
       // const op = {
@@ -392,7 +394,7 @@ describe('EntryPoint', function () {
 
       const wallet = Wallet.fromMnemonic('vivid any call mammal mosquito budget midnight expose spirit approve reject system', "m/44'/818'/0'/0")
       const op = await fillAndSign({
-        sender: '0x78652365bEAdb7C234d205249c044607fFd2C4FC',
+        sender: '0x089AD910B6aDAA1eAe0eC3a1496Af20DABe5EF52',
         nonce: 0n,
         initCode: '0x',
         callData: '0x0000189a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000',
