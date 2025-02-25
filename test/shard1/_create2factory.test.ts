@@ -1,10 +1,9 @@
 import { expect } from 'chai'
 import { Contract } from 'ethers'
 import { artifacts, contract, ethers } from 'hardhat'
-import { SmartAccount, SmartAccountFactory } from '../../typechain'
+import { EcdsaOwnershipRegistryModule, SmartAccount, SmartAccountFactory } from '../../typechain'
 import { EntryPoint } from '../../typechain/contracts/core'
 import { SimpleAccountFactory } from '../../typechain/contracts/samples'
-import { SimpleAccountFactory__factory } from '../../typechain/factories/contracts/samples'
 
 const EntryPointArtifact: Contract = artifacts.require('contracts/core/EntryPoint.sol:EntryPoint')
 const SimpleAccountFactoryArtifact: Contract = artifacts.require('contracts/samples/SimpleAccountFactory.sol:SimpleAccountFactory')
@@ -12,12 +11,15 @@ const SimpleAccountFactoryArtifact: Contract = artifacts.require('contracts/samp
 const SmartAccountArtifact: Contract = artifacts.require('contracts/smart-account/SmartAccount.sol:SmartAccount')
 const SmartAccountFactoryArtifact: Contract = artifacts.require('contracts/smart-account/factory/SmartAccountFactory.sol:SmartAccountFactory')
 
+const EcdsaOwnershipRegistryModuleArtifact: Contract = artifacts.require('EcdsaOwnershipRegistryModule')
+
 contract('Factory', function (accounts) {
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
   // let simpleAccount: SimpleAccount
   let smartAccount: SmartAccount
   let smartAccountFactory: SmartAccountFactory
+  let ecdsaModule: EcdsaOwnershipRegistryModule
   const provider = ethers.provider
 
   beforeEach('deploy all', async function () {
@@ -34,19 +36,58 @@ contract('Factory', function (accounts) {
     console.log('SmartAccount address', smartAccount.address)
     smartAccountFactory = await SmartAccountFactoryArtifact.new(smartAccount.address, accounts[0], { from: accounts[0] })
     console.log('SmartAccountFactory address', smartAccountFactory.address)
+    ecdsaModule = await EcdsaOwnershipRegistryModuleArtifact.new({ from: accounts[0] })
+    console.log('EcdsaOwnershipRegistryModule address', ecdsaModule.address)
   })
 
-  it('should deploy to known address', async () => {
-    const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
-    const simpleAccountAddress = await factory.getAddress(await ethers.provider.getSigner().getAddress(), 0)
+  it('should deploy account using ECDSA validation module', async () => {
+    const EcdsaOwnershipRegistryModule = await ethers.getContractFactory(
+      'EcdsaOwnershipRegistryModule'
+    )
+    const ecdsaOwnershipSetupData =
+    EcdsaOwnershipRegistryModule.interface.encodeFunctionData(
+      'initForSmartAccount',
+      [await provider.getSigner().getAddress()]
+    )
 
-    await factory.createAccount(await ethers.provider.getSigner().getAddress(), 0)
+    const smartAccountFactoryInstance = await ethers.getContractAt(
+      'SmartAccountFactory',
+      smartAccountFactory.address
+    )
+    const deploymentTx = await smartAccountFactoryInstance.deployAccount(
+      ecdsaModule.address,
+      ecdsaOwnershipSetupData
+    )
 
-    console.log('SimpleAccountKnown address', simpleAccountAddress)
+    const receipt = await deploymentTx.wait()
 
-    // An account has been deployed at said address
-    expect(await provider.getCode(simpleAccountAddress).then(code => code.length)).to.be.gt(2)
+    const deployedSmartAccountAddress = receipt.events?.filter(
+      event => event.event === 'AccountCreationWithoutIndex'
+    )[0].args?.[0]
+
+    const smartAccountInstance = await ethers.getContractAt(
+      'SmartAccount',
+      deployedSmartAccountAddress
+    )
+    expect(await smartAccountInstance.isModuleEnabled(ecdsaModule.address)).to.equal(
+      true
+    )
+    expect(await ecdsaModule.getOwner(smartAccountInstance.address)).to.equal(
+      await provider.getSigner().getAddress()
+    )
   })
+
+  // it('should deploy to known address', async () => {
+  //   const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
+  //   const simpleAccountAddress = await factory.getAddress(await ethers.provider.getSigner().getAddress(), 0)
+
+  //   await factory.createAccount(await ethers.provider.getSigner().getAddress(), 0)
+
+  //   console.log('SimpleAccountKnown address', simpleAccountAddress)
+
+  //   // An account has been deployed at said address
+  //   expect(await provider.getCode(simpleAccountAddress).then(code => code.length)).to.be.gt(2)
+  // })
 
   // it('should deploy to different address based on salt', async () => {
   //   const factory = SimpleAccountFactory__factory.connect(simpleAccountFactory.address, ethers.provider.getSigner())
