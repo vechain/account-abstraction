@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { Contract } from 'ethers'
 import { artifacts, contract, ethers } from 'hardhat'
-import { EcdsaOwnershipRegistryModule, SmartAccount, SmartAccountFactory } from '../../typechain'
+import { EcdsaOwnershipRegistryModule, SmartAccountFactory } from '../../typechain'
 import { EntryPoint } from '../../typechain/contracts/core'
 import { SimpleAccountFactory } from '../../typechain/contracts/samples'
 
@@ -17,7 +17,6 @@ contract('Factory', function (accounts) {
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
   // let simpleAccount: SimpleAccount
-  let smartAccount: SmartAccount
   let smartAccountFactory: SmartAccountFactory
   let ecdsaModule: EcdsaOwnershipRegistryModule
   const provider = ethers.provider
@@ -32,8 +31,7 @@ contract('Factory', function (accounts) {
     // smartAccountFactory = await SmartAccountFactoryArtifact.new(simpleAccount.address, accounts[0], { from: accounts[0] })
     // console.log('SmartAccountFactory address', smartAccountFactory.address)
 
-    smartAccount = await SmartAccountArtifact.new(entryPoint.address, { from: accounts[0] })
-    console.log('SmartAccount address', smartAccount.address)
+    const smartAccount = await SmartAccountArtifact.new(entryPoint.address, { from: accounts[0] })
     smartAccountFactory = await SmartAccountFactoryArtifact.new(smartAccount.address, accounts[0], { from: accounts[0] })
     console.log('SmartAccountFactory address', smartAccountFactory.address)
     ecdsaModule = await EcdsaOwnershipRegistryModuleArtifact.new({ from: accounts[0] })
@@ -65,7 +63,7 @@ contract('Factory', function (accounts) {
       event => event.event === 'AccountCreationWithoutIndex'
     )[0].args?.[0]
 
-    console.log('SmartAccount with ECDSA module address', smartAccount.address)
+    console.log('SmartAccount with ECDSA module address', deployedSmartAccountAddress)
 
     const smartAccountInstance = await ethers.getContractAt(
       'SmartAccount',
