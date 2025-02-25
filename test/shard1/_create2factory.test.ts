@@ -65,6 +65,8 @@ contract('Factory', function (accounts) {
       event => event.event === 'AccountCreationWithoutIndex'
     )[0].args?.[0]
 
+    console.log('SmartAccount with ECDSA module address', smartAccount.address)
+
     const smartAccountInstance = await ethers.getContractAt(
       'SmartAccount',
       deployedSmartAccountAddress
