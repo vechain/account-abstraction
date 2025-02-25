@@ -375,22 +375,6 @@ describe('EntryPoint', function () {
 
     it.only('should succeed if validateUserOp succeeds', async () => {
       entryPoint = EntryPoint__factory.connect('0x606eb8EeB7a1B1a8326BF429Bf80c835c7aa44af', ethers.provider.getSigner())
-      // const op = await fillAndSign({ sender: account1.address }, accountOwner1, entryPoint)
-
-      // const op = {
-      //   sender: '0x163B5AD27640Bb346d7674965f3EaAa51150913d',
-      //   nonce: 0n,
-      //   initCode: '0x',
-      //   callData: '0x0000189a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000',
-      //   callGasLimit: 15000000n,
-      //   verificationGasLimit: 6000000n,
-      //   preVerificationGas: 1000000n,
-      //   maxFeePerGas: 1000000n,
-      //   maxPriorityFeePerGas: 1000000n,
-      //   paymasterAndData: '0x',
-      //   signature: '0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000001c5b32f37f5bea87bdd5374eb2ac54ea8e0000000000000000000000000000000000000000000000000000000000000041c4d13461bdcf9a2d1cc17ae955e728f334b6c7bfae5e10fa1dd33aa9561ba40a51ff3ac96e037a1cd8bd7a9221a825f88716f736f34440af4eb7bd588e2f1ee01c00000000000000000000000000000000000000000000000000000000000000'
-      // }
-
       const wallet = Wallet.fromMnemonic('vivid any call mammal mosquito budget midnight expose spirit approve reject system', "m/44'/818'/0'/0")
       const op = await fillAndSign({
         sender: '0x33b515F1Bc3bf8aB9AF38BbBBe6F085F2D985368',
@@ -404,48 +388,23 @@ describe('EntryPoint', function () {
         maxPriorityFeePerGas: 1000000n
       }, wallet, entryPoint)
       console.log('op', op)
-      // await fund(account1)
 
-      // const iface = new ethers.utils.Interface([
-      //   'function validateUserOp((address sender, uint256 nonce, bytes callData, bytes signature) userOp, bytes32 userOpHash, uint256 missingAccountFunds) external returns (uint256)'
-      // ])
+      const signatureWithModuleAddress = ethers.utils.defaultAbiCoder.encode(
+        ['bytes', 'address'],
+        [op.signature, '0x6aF925Cb86074b5d686532eC8251cd4d710B7143']
+      )
+      op.signature = signatureWithModuleAddress
+
+      console.log('op with module address', op)
 
       const userOpHash = await entryPoint.getUserOpHash(op)
 
       console.log('userOpHash', userOpHash)
 
-      // const data = iface.encodeFunctionData('validateUserOp', [op, userOpHash, 0])
-
-      // try {
-      //   const tx = await ethers.provider.getSigner().sendTransaction({
-      //     to: '0xaa0eFc1986faeEBCB2f4406a5D2c717ce0429EcD',
-      //     data: data,
-      //     gasLimit: 1e7
-      //   })
-
-      //   console.log('tx', tx)
-
-      //   const receipt = await tx.wait()
-
-      //   console.log('receipt', receipt)
-      // } catch (e) {
-      //   console.log('error', e)
-
-      //   try {
-      //     const result = await ethers.provider.call({
-      //       to: '0xaa0eFc1986faeEBCB2f4406a5D2c717ce0429EcD',
-      //       data: data,
-      //       gasLimit: 1e7
-      //     })
-
-      //     console.log('callStatic result:', result)
-      //   } catch (staticError) {
-      //     console.error('Static call error:', staticError) // Log the static call error
-      //   }
-      // }
-
-      const { returnInfo } = await entryPoint.callStatic.simulateValidation(op).catch(simulationResultCatch)
-      expect(returnInfo).to.eql({})
+      // simulateValidation always reverts but if it works it should get to the
+      // last error, ValidationResult. simulationResultCatch throws an error
+      // if the error is NOT a ValidationResult error.
+      await entryPoint.callStatic.simulateValidation(op).catch(simulationResultCatch)
     })
 
     it('should return empty context if no paymaster', async () => {
