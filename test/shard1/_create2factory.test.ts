@@ -3,7 +3,7 @@ import { Contract } from 'ethers'
 import { artifacts, contract, ethers } from 'hardhat'
 import { SmartAccount, SmartAccountFactory } from '../../typechain'
 import { EntryPoint } from '../../typechain/contracts/core'
-import { SimpleAccount, SimpleAccountFactory } from '../../typechain/contracts/samples'
+import { SimpleAccountFactory } from '../../typechain/contracts/samples'
 import { SimpleAccountFactory__factory } from '../../typechain/factories/contracts/samples'
 
 const EntryPointArtifact: Contract = artifacts.require('contracts/core/EntryPoint.sol:EntryPoint')
@@ -15,7 +15,7 @@ const SmartAccountFactoryArtifact: Contract = artifacts.require('contracts/smart
 contract('Factory', function (accounts) {
   let entryPoint: EntryPoint
   let simpleAccountFactory: SimpleAccountFactory
-  let simpleAccount: SimpleAccount
+  // let simpleAccount: SimpleAccount
   let smartAccount: SmartAccount
   let smartAccountFactory: SmartAccountFactory
   const provider = ethers.provider
