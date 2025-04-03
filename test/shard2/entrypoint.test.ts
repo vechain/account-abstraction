@@ -8,6 +8,7 @@ import {
   SimpleAccount,
   SimpleAccountFactory,
   SimpleAccountFactory__factory,
+  SmartAccountFactory__factory,
   TestCounter__factory
 } from '../../typechain'
 import {
@@ -371,6 +372,12 @@ describe('EntryPoint', function () {
       const op = await fillAndSign({ sender: account.address, verificationGasLimit: 1000 }, accountOwner, entryPoint)
       await expect(entryPoint.callStatic.simulateValidation(op)).to
         .revertedWith('FailedOp').withArgs(0, 'AA23 reverted (or OOG)')
+    })
+
+    it.only('should retrieve the default callback', async () => {
+      const smartAccountFactory = SmartAccountFactory__factory.connect('0x9CB89703d9f3A29B1bbfBad690D8D119E952c9df', ethers.provider.getSigner())
+      const handler = await smartAccountFactory.minimalHandler()
+      console.log('handler', handler)
     })
 
     it.only('should succeed if validateUserOp succeeds', async () => {
