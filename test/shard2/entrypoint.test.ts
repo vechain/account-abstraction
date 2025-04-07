@@ -567,9 +567,9 @@ describe('EntryPoint', function () {
     })
 
     it.only('should simulate execution', async () => {
-      const entryPointAddress = '0xFa5e6e0ecACc4b517f966C8eB780A6a5362d704F'
-      const smartAccountAddress = '0x1B5c28e68C997d87D639fE81889dd2B30186EfEA'
-      const ecdsaOwnershipRegistryModuleAddress = '0xCfADE8Ad1E97d8cc01eF19C85eFB41B344413896'
+      const entryPointAddress = '0x606eb8EeB7a1B1a8326BF429Bf80c835c7aa44af'
+      const smartAccountAddress = '0x33b515F1Bc3bf8aB9AF38BbBBe6F085F2D985368'
+      const ecdsaOwnershipRegistryModuleAddress = '0x6aF925Cb86074b5d686532eC8251cd4d710B7143'
       entryPoint = EntryPoint__factory.connect(entryPointAddress, ethers.provider.getSigner())
       const wallet = Wallet.fromMnemonic('vivid any call mammal mosquito budget midnight expose spirit approve reject system', "m/44'/818'/0'/0")
       const testCounterContract = await TestCounterT.new()
