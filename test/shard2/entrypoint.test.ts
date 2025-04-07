@@ -374,13 +374,13 @@ describe('EntryPoint', function () {
         .revertedWith('FailedOp').withArgs(0, 'AA23 reverted (or OOG)')
     })
 
-    it.only('should retrieve the default callback', async () => {
+    it('should retrieve the default callback', async () => {
       const smartAccountFactory = SmartAccountFactory__factory.connect('0x9CB89703d9f3A29B1bbfBad690D8D119E952c9df', ethers.provider.getSigner())
       const handler = await smartAccountFactory.minimalHandler()
       console.log('handler', handler)
     })
 
-    it.only('should succeed if validateUserOp succeeds', async () => {
+    it('should succeed if validateUserOp succeeds', async () => {
       entryPoint = EntryPoint__factory.connect('0x606eb8EeB7a1B1a8326BF429Bf80c835c7aa44af', ethers.provider.getSigner())
       const wallet = Wallet.fromMnemonic('vivid any call mammal mosquito budget midnight expose spirit approve reject system', "m/44'/818'/0'/0")
       const op = await fillAndSign({
@@ -566,32 +566,58 @@ describe('EntryPoint', function () {
       entryPoint = EntryPoint__factory.connect(entryPointAddress, signer2)
     })
 
-    it('should simulate execution', async () => {
-      const accountOwner1 = createAccountOwner()
-      const { account } = await createAccountFromFactory(simpleAccountFactory, ethersSigner, await accountOwner.getAddress())
-      await fund(account)
+    it.only('should simulate execution', async () => {
+      const entryPointAddress = '0xFa5e6e0ecACc4b517f966C8eB780A6a5362d704F'
+      const smartAccountAddress = '0x1B5c28e68C997d87D639fE81889dd2B30186EfEA'
+      const ecdsaOwnershipRegistryModuleAddress = '0xCfADE8Ad1E97d8cc01eF19C85eFB41B344413896'
+      entryPoint = EntryPoint__factory.connect(entryPointAddress, ethers.provider.getSigner())
+      const wallet = Wallet.fromMnemonic('vivid any call mammal mosquito budget midnight expose spirit approve reject system', "m/44'/818'/0'/0")
       const testCounterContract = await TestCounterT.new()
-      const counter = TestCounter__factory.connect(testCounterContract.address, ethersSigner)
+      const counter = TestCounter__factory.connect(testCounterContract.address, ethers.provider.getSigner())
 
       const count = counter.interface.encodeFunctionData('count')
       const callData = account.interface.encodeFunctionData('execute', [counter.address, 0, count])
-      // deliberately broken signature.. simulate should work with it too.
       const userOp = await fillAndSign({
-        sender: account.address,
-        callData
-      }, accountOwner1, entryPoint)
+        sender: smartAccountAddress,
+        nonce: 0n,
+        initCode: '0x',
+        callData,
+        callGasLimit: 15000000n,
+        verificationGasLimit: 6000000n,
+        preVerificationGas: 1000000n,
+        maxFeePerGas: 0n,
+        maxPriorityFeePerGas: 0n
+      }, wallet, entryPoint)
+      // console.log('op', userOp)
+
+      const signatureWithModuleAddress = ethers.utils.defaultAbiCoder.encode(
+        ['bytes', 'address'],
+        [userOp.signature, ecdsaOwnershipRegistryModuleAddress]
+      )
+      userOp.signature = signatureWithModuleAddress
+
+      // console.log('op with module address', userOp)
+
+      const userOpHash = await entryPoint.getUserOpHash(userOp)
+
+      console.log('userOpHash', userOpHash)
 
       const ret = await entryPoint.callStatic.simulateHandleOp(userOp,
         counter.address,
-        counter.interface.encodeFunctionData('counters', [account.address])
-      ).catch(e => e.errorArgs)
+        counter.interface.encodeFunctionData('counters', [smartAccountAddress])
+      ).catch(e => {
+        // console.log('error', e)
+        return e.errorArgs
+      })
+
+      // console.log('ret', ret)
 
       const [countResult] = counter.interface.decodeFunctionResult('counters', ret.targetResult)
       expect(countResult).to.eql(1)
       expect(ret.targetSuccess).to.be.true
 
       // actual counter is zero
-      expect(await counter.counters(account.address)).to.eql(0)
+      expect(await counter.counters(smartAccountAddress)).to.eql(0)
     })
   })
 })
