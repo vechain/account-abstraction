@@ -8,6 +8,7 @@ import {
   SimpleAccount,
   SimpleAccountFactory,
   SimpleAccountFactory__factory,
+  SmartAccount__factory,
   SmartAccountFactory__factory,
   TestCounter__factory
 } from '../../typechain'
@@ -574,9 +575,10 @@ describe('EntryPoint', function () {
       const wallet = Wallet.fromMnemonic('vivid any call mammal mosquito budget midnight expose spirit approve reject system', "m/44'/818'/0'/0")
       const testCounterContract = await TestCounterT.new()
       const counter = TestCounter__factory.connect(testCounterContract.address, ethers.provider.getSigner())
+      const smartAccount = SmartAccount__factory.connect(smartAccountAddress, ethers.provider.getSigner())
 
       const count = counter.interface.encodeFunctionData('count')
-      const callData = account.interface.encodeFunctionData('execute', [counter.address, 0, count])
+      const callData = smartAccount.interface.encodeFunctionData('execute', [counter.address, 0, count])
       const userOp = await fillAndSign({
         sender: smartAccountAddress,
         nonce: 0n,
